@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PlanetGraphic   from '../../components/graphics/PlanetGraphic';
 import SolarPanelGraphic from '../../components/graphics/SolarPanelGraphic';
 import BuildingButton  from '../../components/ui/BuildingButton';
+import PixelPanel      from '../../components/ui/PixelPanel';
 import ResourceBar     from '../../components/ui/ResourceBar';
 import TapButton       from '../../components/ui/TapButton';
 import { Colors, Font, Space, WorldThemes } from '../../constants/theme';
@@ -68,9 +69,11 @@ export default function WorldDetailScreen() {
         </View>
 
         {/* health bar */}
-        <ResourceBar label="PLANETARY HEALTH" value={res.health} max={100} color={theme.accent} showValue />
-        <ResourceBar label="ENERGY"  value={res.energy}  max={Math.max(res.energy, res.solarCost * 3)} color={Colors.cyan}  showValue />
-        <ResourceBar label="BIOMASS" value={res.biomass} max={Math.max(res.biomass, 200)}              color={Colors.green} showValue />
+        <PixelPanel accentColor={theme.accent} style={styles.panel}>
+          <ResourceBar label="PLANETARY HEALTH" value={res.health} max={100} color={theme.accent} showValue />
+          <ResourceBar label="ENERGY"  value={res.energy}  max={Math.max(res.energy, res.solarCost * 3)} color={Colors.cyan}  showValue />
+          <ResourceBar label="BIOMASS" value={res.biomass} max={Math.max(res.biomass, 200)}              color={Colors.green} showValue />
+        </PixelPanel>
 
         {/* solar panel graphic */}
         <View style={styles.centred}>
@@ -84,6 +87,7 @@ export default function WorldDetailScreen() {
         </View>
 
         {/* upgrades */}
+        <PixelPanel accentColor={Colors.cyan} style={styles.panel}>
         <Text style={styles.sectionLabel}>UPGRADES</Text>
         <BuildingButton
           title="Solar Collector"
@@ -105,6 +109,7 @@ export default function WorldDetailScreen() {
           onPress={res.buyHydroLab}
           accentColor={Colors.green}
         />
+        </PixelPanel>
 
         {/* activate button */}
         <TouchableOpacity
@@ -171,8 +176,11 @@ const styles = StyleSheet.create({
     fontSize:      Font.sizes.xs,
     color:         Colors.textSecond,
     letterSpacing: 3,
-    marginTop:     Space.md,
     marginBottom:  Space.sm,
+  },
+  panel: {
+    marginHorizontal: 0,
+    marginVertical:   Space.sm,
   },
   activateBtn: {
     borderWidth:  1,

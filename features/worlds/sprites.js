@@ -73,6 +73,32 @@ export const SOIL_SPRITES = {
   toxicSludge: { pattern: SOIL_TEXTURE, palette: { a: '#2a3a1a', b: '#669933' } },
 };
 
+// Landmass blob for the continent travel map (12×12).
+// 'a' = land, 'b' = highlight/coastline.
+export const CONTINENT_SPRITE_PATTERN = [
+  '............',
+  '...aaaaa....',
+  '..aaaaaaaa..',
+  '.aaabbbaaaa.',
+  '.aabbbbbaa..',
+  'aaabbbbbaaa.',
+  '.aaabbbaaaa.',
+  '..aaaaaaaa..',
+  '...aaaaa....',
+  '....aaa.....',
+  '............',
+  '............',
+];
+
+/** Palette for a continent tile based on its travel status. */
+export function continentPalette(status) {
+  switch (status) {
+    case 'completed': return { a: '#00cc66', b: '#00ff88' };
+    case 'current':   return { a: '#00ffcc', b: '#e0fff5' };
+    default:          return { a: '#3a3a3a', b: '#5a5a5a' }; // locked
+  }
+}
+
 // Glass-dome greenhouse building (12×12).
 // 'a' = frame, 'b' = glass highlight, 'c' = glass panel, 'd' = foundation.
 export const GREENHOUSE_SPRITE = {

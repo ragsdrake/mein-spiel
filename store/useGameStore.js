@@ -8,7 +8,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { buildingCost, getWorld, greenhouseCost, WORLDS } from '../features/worlds/worldData';
 import { getPlant } from '../features/worlds/plantData';
 import { GENES, getGene } from '../features/worlds/geneData';
@@ -39,16 +41,19 @@ const makeWorldState = (worldDef) => ({
   seeds:          0,
   zoneState:      makeZoneState(worldDef),
   researchedGenes: [],
+  currentContinentIndex: 0,
 });
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
 
 // ─── store ────────────────────────────────────────────────────────────────────
-const useGameStore = create((set, get) => ({
+const useGameStore = create(persist((set, get) => ({
 
   // ── state ──────────────────────────────────────────────────────────────────
   activeWorldId: 'kepler9b',
+  // story intros already confirmed by the player ('gameIntro' or a world id)
+  seenIntros: [],
   worlds: Object.fromEntries(
     WORLDS.map(w => [w.id, makeWorldState(w)])
   ),
@@ -78,7 +83,24 @@ const useGameStore = create((set, get) => ({
     return getGene(geneId)?.cost ?? Infinity;
   },
 
+  getContinentProgress(worldId, continentIndex) {
+    const id = worldId || get().activeWorldId;
+    const worldDef  = getWorld(id);
+    const continent = worldDef.continents[continentIndex];
+    const zoneState = get().worlds[id].zoneState;
+    if (!continent) return { total: 0, repaired: 0 };
+    const total    = continent.zoneIds.length;
+    const repaired = continent.zoneIds.filter(zid => zoneState[zid]?.repaired).length;
+    return { total, repaired };
+  },
+
   // ── actions ────────────────────────────────────────────────────────────────
+
+  /** Mark a story intro (gameIntro or world id) as seen */
+  markIntroSeen(introId) {
+    if (get().seenIntros.includes(introId)) return;
+    set(state => ({ seenIntros: [...state.seenIntros, introId] }));
+  },
 
   /** Manual tap — grants +1 energy to active world */
   tapEnergy() {
@@ -232,6 +254,31 @@ const useGameStore = create((set, get) => ({
     return true;
   },
 
+  travelToNextContinent(worldId) {
+    const id       = worldId || get().activeWorldId;
+    const worldDef = getWorld(id);
+    const w        = get().worlds[id];
+    const continent = worldDef.continents[w.currentContinentIndex];
+    if (!continent) return false;
+
+    const allRepaired = continent.zoneIds.every(zid => w.zoneState[zid]?.repaired);
+    if (!allRepaired) return false;
+
+    const next = worldDef.continents[w.currentContinentIndex + 1];
+    if (!next) return false;
+
+    set(state => ({
+      worlds: {
+        ...state.worlds,
+        [id]: {
+          ...state.worlds[id],
+          currentContinentIndex: state.worlds[id].currentContinentIndex + 1,
+        },
+      },
+    }));
+    return true;
+  },
+
   /** Switch active world */
   setActiveWorld(worldId) {
     const w = get().worlds[worldId];
@@ -339,6 +386,15 @@ const useGameStore = create((set, get) => ({
       return { worlds: updatedWorlds };
     });
   },
+}), {
+  name:    'genesis-save-v1',
+  storage: createJSONStorage(() => AsyncStorage),
+  // persist only durable game data — never the running tick interval
+  partialize: (state) => ({
+    activeWorldId: state.activeWorldId,
+    seenIntros:    state.seenIntros,
+    worlds:        state.worlds,
+  }),
 }));
 
 export default useGameStore;

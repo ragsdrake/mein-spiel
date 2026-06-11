@@ -33,9 +33,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PlanetGraphic   from '../../components/graphics/PlanetGraphic';
 import PixelSprite     from '../../components/graphics/PixelSprite';
 import BuildingButton  from '../../components/ui/BuildingButton';
+import ContinentMap    from '../../components/ui/ContinentMap';
 import GeneCard        from '../../components/ui/GeneCard';
+import PixelPanel      from '../../components/ui/PixelPanel';
 import PlantPicker     from '../../components/ui/PlantPicker';
 import ResourceBar     from '../../components/ui/ResourceBar';
+import StoryIntro      from '../../components/ui/StoryIntro';
 import TapButton       from '../../components/ui/TapButton';
 import ZoneTile        from '../../components/ui/ZoneTile';
 import { Colors, Font, Space, WorldThemes } from '../../constants/theme';
@@ -43,6 +46,12 @@ import { getWorld }    from '../../features/worlds/worldData';
 import { getPlant }    from '../../features/worlds/plantData';
 import { GENES }       from '../../features/worlds/geneData';
 import { GREENHOUSE_SPRITE } from '../../features/worlds/sprites';
+import {
+  GAME_INTRO,
+  getContinentArrival,
+  getTerraformOutro,
+  getWorldIntro,
+} from '../../features/story/storyData';
 import useGameStore    from '../../store/useGameStore';
 import useWorldResources from '../../hooks/useWorldResources';
 
@@ -60,18 +69,30 @@ function ScanLines() {
   );
 }
 
-// ─── separator ────────────────────────────────────────────────────────────────
-function Sep({ color = Colors.gridLine }) {
-  return <View style={[styles.sep, { backgroundColor: color }]} />;
-}
-
 // ─── main component ───────────────────────────────────────────────────────────
 export default function CommandScreen() {
   const activeId  = useGameStore(s => s.activeWorldId);
   const worldDef  = getWorld(activeId);
   const theme     = WorldThemes[worldDef.theme] || WorldThemes.default;
   const res       = useWorldResources(activeId);
+  const seenIntros    = useGameStore(s => s.seenIntros);
+  const markIntroSeen = useGameStore(s => s.markIntroSeen);
   const [selectedZoneId, setSelectedZoneId] = useState(null);
+
+  // story event priority: game intro → world intro → continent arrival → outro
+  let pendingIntro = null;
+  if (!seenIntros.includes('gameIntro')) {
+    pendingIntro = GAME_INTRO;
+  } else if (!seenIntros.includes(activeId)) {
+    pendingIntro = getWorldIntro(activeId);
+  } else if (res) {
+    const continent = worldDef.continents[res.currentContinentIndex];
+    if (res.currentContinentIndex > 0 && continent && !seenIntros.includes(`${activeId}:${continent.id}`)) {
+      pendingIntro = getContinentArrival(activeId, continent);
+    } else if (res.terraformed && !seenIntros.includes(`${activeId}:done`)) {
+      pendingIntro = getTerraformOutro(activeId, worldDef.name);
+    }
+  }
 
   const handleBuySolar = useCallback(() => res?.buySolarPanel(), [res]);
   const handleBuyLab   = useCallback(() => res?.buyHydroLab(),   [res]);
@@ -102,6 +123,7 @@ export default function CommandScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ── planet graphic ──────────────────────────────────────── */}
+        <PixelPanel accentColor={theme.accent + '66'}>
         <View style={styles.planetWrapper}>
           <PlanetGraphic size={PLANET_SIZE} health={res.health} />
 
@@ -110,11 +132,10 @@ export default function CommandScreen() {
             {`SOL·${activeId.slice(0, 4).toUpperCase()} // LAT:${(res.health * 0.9).toFixed(1)}°`}
           </Text>
         </View>
-
-        <Sep color={theme.accent + '33'} />
+        </PixelPanel>
 
         {/* ── resource readouts ───────────────────────────────────── */}
-        <View style={styles.section}>
+        <PixelPanel accentColor={theme.accent}>
           <ResourceBar
             label="PLANETARY HEALTH"
             value={res.health}
@@ -136,19 +157,15 @@ export default function CommandScreen() {
             color={Colors.green}
             showValue
           />
-        </View>
-
-        <Sep />
+        </PixelPanel>
 
         {/* ── tap button ──────────────────────────────────────────── */}
         <View style={styles.tapSection}>
           <TapButton onPress={res.tapEnergy} color={theme.accent} />
         </View>
 
-        <Sep />
-
         {/* ── upgrade panel ───────────────────────────────────────── */}
-        <View style={styles.section}>
+        <PixelPanel accentColor={Colors.cyan}>
           <Text style={styles.sectionLabel}>INFRASTRUCTURE</Text>
 
           <BuildingButton
@@ -172,12 +189,10 @@ export default function CommandScreen() {
             onPress={handleBuyLab}
             accentColor={Colors.green}
           />
-        </View>
-
-        <Sep />
+        </PixelPanel>
 
         {/* ── greenhouse ──────────────────────────────────────────── */}
-        <View style={styles.section}>
+        <PixelPanel accentColor={Colors.purple}>
           <View style={styles.greenhouseHeader}>
             <PixelSprite {...GREENHOUSE_SPRITE} size={56} />
             <Text style={[styles.sectionLabel, styles.greenhouseLabel]}>GREENHOUSE</Text>
@@ -207,6 +222,8 @@ export default function CommandScreen() {
                 onPress={res.buyGreenhouse}
                 accentColor={Colors.purple}
               />
+
+              <ContinentMap continents={res.continents} onTravel={res.travelToNextContinent} />
 
               <Text style={styles.sectionLabel}>PLANET STRUCTURE</Text>
               <View style={styles.zoneGrid}>
@@ -251,11 +268,19 @@ export default function CommandScreen() {
               ))}
             </>
           )}
-        </View>
+        </PixelPanel>
 
         {/* spacer for tab bar */}
         <View style={{ height: Space.xl }} />
       </ScrollView>
+
+      {pendingIntro && (
+        <StoryIntro
+          intro={pendingIntro}
+          accent={theme.accent}
+          onDone={() => markIntroSeen(pendingIntro.id)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -303,10 +328,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginTop:     Space.xs,
   },
-  section: {
-    paddingHorizontal: Space.lg,
-    paddingVertical:   Space.md,
-  },
   sectionLabel: {
     fontFamily:    Font.mono,
     fontSize:      Font.sizes.xs,
@@ -331,11 +352,6 @@ const styles = StyleSheet.create({
   tapSection: {
     alignItems:     'center',
     paddingVertical: Space.lg,
-  },
-  sep: {
-    height:           1,
-    backgroundColor:  Colors.gridLine,
-    marginHorizontal: Space.lg,
   },
   scanLine: {
     position:        'absolute',

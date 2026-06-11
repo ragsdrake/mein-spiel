@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceStationGraphic from '../../components/graphics/SpaceStationGraphic';
+import PixelPanel          from '../../components/ui/PixelPanel';
 import WorldCard           from '../../components/ui/WorldCard';
 import { Colors, Font, Space } from '../../constants/theme';
 import { WORLDS }          from '../../features/worlds/worldData';
@@ -54,8 +55,8 @@ export default function WorldsScreen() {
 
       {/* ── header ──────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={styles.title}>PLANETARY SYSTEMS</Text>
-        <Text style={styles.subtitle}>SELECT ACTIVE WORLD</Text>
+        <Text style={styles.title}>PROJEKT GENESIS</Text>
+        <Text style={styles.subtitle}>PLANETARY SYSTEMS — SELECT ACTIVE WORLD</Text>
       </View>
 
       <ScrollView
@@ -64,14 +65,16 @@ export default function WorldsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* station graphic */}
-        <View style={styles.stationWrapper}>
-          <SpaceStationGraphic
-            size={Math.min(W * 0.65, 260)}
-            active={true}
-            level={2}
-          />
-          <Text style={styles.stationLabel}>ORBITAL COMMAND — STATION ALPHA</Text>
-        </View>
+        <PixelPanel accentColor={Colors.cyan} style={styles.stationPanel}>
+          <View style={styles.stationWrapper}>
+            <SpaceStationGraphic
+              size={Math.min(W * 0.65, 260)}
+              active={true}
+              level={2}
+            />
+            <Text style={styles.stationLabel}>ORBITAL COMMAND — STATION ALPHA</Text>
+          </View>
+        </PixelPanel>
 
         {/* world cards */}
         {WORLDS.map(world => (
@@ -120,9 +123,12 @@ const styles = StyleSheet.create({
   content: {
     padding: Space.lg,
   },
+  stationPanel: {
+    marginHorizontal: 0,
+    marginBottom:     Space.lg,
+  },
   stationWrapper: {
-    alignItems:     'center',
-    marginBottom:   Space.lg,
+    alignItems: 'center',
   },
   stationLabel: {
     fontFamily:    Font.mono,

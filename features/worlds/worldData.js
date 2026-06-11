@@ -41,6 +41,13 @@ export const WORLDS = [
       { id: 'z5', soil: 'rock',        damage: 'drought'   },
       { id: 'z6', soil: 'sand',        damage: 'toxicity'  },
     ],
+    // continents are visited step by step — only the current one's zones
+    // are explorable until fully repaired
+    continents: [
+      { id: 'c1', name: 'Ashen Reach',   zoneIds: ['z1', 'z2'] },
+      { id: 'c2', name: 'Dust Basin',    zoneIds: ['z3', 'z4'] },
+      { id: 'c3', name: 'Cracked Belt',  zoneIds: ['z5', 'z6'] },
+    ],
   },
   {
     id:          'glacius4',
@@ -72,6 +79,11 @@ export const WORLDS = [
       { id: 'z5', soil: 'rock',       damage: 'erosion'   },
       { id: 'z6', soil: 'permafrost', damage: 'erosion'   },
     ],
+    continents: [
+      { id: 'c1', name: 'Frostfall Shelf', zoneIds: ['z1', 'z2'] },
+      { id: 'c2', name: 'Glow Crater',     zoneIds: ['z3', 'z4'] },
+      { id: 'c3', name: 'Shattered Ridge', zoneIds: ['z5', 'z6'] },
+    ],
   },
   {
     id:          'vexprime',
@@ -102,6 +114,11 @@ export const WORLDS = [
       { id: 'z4', soil: 'sand',        damage: 'drought'   },
       { id: 'z5', soil: 'ice',         damage: 'radiation' },
       { id: 'z6', soil: 'toxicSludge', damage: 'drought'   },
+    ],
+    continents: [
+      { id: 'c1', name: 'Sludge Flats',   zoneIds: ['z1', 'z2'] },
+      { id: 'c2', name: 'Sand Choke',     zoneIds: ['z3', 'z4'] },
+      { id: 'c3', name: 'Frozen Vent',    zoneIds: ['z5', 'z6'] },
     ],
   },
 ];

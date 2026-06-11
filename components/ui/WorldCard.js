@@ -15,6 +15,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors, Font, Space, WorldThemes } from '../../constants/theme';
+import PixelPanel  from './PixelPanel';
 import ResourceBar from './ResourceBar';
 
 export default function WorldCard({ world, worldState, active, onPress, onDetails }) {
@@ -25,12 +26,11 @@ export default function WorldCard({ world, worldState, active, onPress, onDetail
     <TouchableOpacity
       onPress={locked ? undefined : onPress}
       activeOpacity={locked ? 1 : 0.8}
-      style={[
-        styles.card,
-        active && { borderColor: theme.accent, borderWidth: 1.5 },
-        locked && styles.locked,
-      ]}
     >
+      <PixelPanel
+        accentColor={locked ? Colors.gridLine : active ? theme.accent : theme.accent + '66'}
+        style={[styles.card, locked && styles.locked]}
+      >
       {/* header */}
       <View style={styles.header}>
         <View>
@@ -85,18 +85,16 @@ export default function WorldCard({ world, worldState, active, onPress, onDetail
           <Text style={[styles.detailsBtnText, { color: theme.accent }]}>VIEW DETAILS →</Text>
         </TouchableOpacity>
       )}
+      </PixelPanel>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
-    borderWidth:     1,
-    borderColor:     Colors.gridLine,
-    borderRadius:    2,
-    padding:         Space.md,
-    marginBottom:    Space.sm,
+    marginHorizontal: 0,
+    marginVertical:   0,
+    marginBottom:     Space.sm,
   },
   locked: {
     opacity: 0.5,

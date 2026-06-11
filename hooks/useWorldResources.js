@@ -20,6 +20,8 @@ export default function useWorldResources(worldId) {
   const plantInZone   = useGameStore(s => s.plantInZone);
   const researchGene  = useGameStore(s => s.researchGene);
   const tapEnergy     = useGameStore(s => s.tapEnergy);
+  const travelToNextContinent = useGameStore(s => s.travelToNextContinent);
+  const getContinentProgress  = useGameStore(s => s.getContinentProgress);
 
   if (!world) return null;
 
@@ -27,10 +29,27 @@ export default function useWorldResources(worldId) {
   const exploredCount = Object.values(world.zoneState).filter(z => z.explored).length;
   const nextExploreCost = 100 * (exploredCount + 1);
 
-  const zones = worldDef.zones.map(zoneDef => ({
-    ...zoneDef,
-    ...world.zoneState[zoneDef.id],
-  }));
+  const currentContinentIndex = world.currentContinentIndex;
+  const continents = worldDef.continents.map((c, i) => {
+    const { total, repaired } = getContinentProgress(id, i);
+    return {
+      ...c,
+      total,
+      repaired,
+      unlocked: i <= currentContinentIndex,
+      current:  i === currentContinentIndex,
+      completed: repaired === total,
+    };
+  });
+
+  const currentContinent = worldDef.continents[currentContinentIndex];
+  const zones = currentContinent.zoneIds.map(zoneId => {
+    const zoneDef = worldDef.zones.find(z => z.id === zoneId);
+    return {
+      ...zoneDef,
+      ...world.zoneState[zoneDef.id],
+    };
+  });
 
   return {
     energy:         Math.floor(world.energy),
@@ -45,6 +64,8 @@ export default function useWorldResources(worldId) {
     greenhouseCost,
     nextExploreCost,
     zones,
+    continents,
+    currentContinentIndex,
     researchedGenes: world.researchedGenes,
     canBuySolar:      world.energy >= solarCost,
     canBuyLab:        world.energy >= labCost,
@@ -56,6 +77,7 @@ export default function useWorldResources(worldId) {
     exploreZone:    (zoneId) => exploreZone(id, zoneId),
     plantInZone:    (zoneId, plantId) => plantInZone(id, zoneId, plantId),
     researchGene:   (geneId) => researchGene(id, geneId),
+    travelToNextContinent: () => travelToNextContinent(id),
     tapEnergy,
   };
 }
