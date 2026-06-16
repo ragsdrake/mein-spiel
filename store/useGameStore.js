@@ -1,11 +1,11 @@
 /**
  * store/useGameStore.js
- * ─────────────────────────────────────────────────────────────────────────────
+ * ────────────────────────────────────────────────────────────────
  * Central Zustand store.  Manages per-world resources, building counts,
- * health, and the game-loop tick.
+ * health, game-loop tick, AND level progression system.
  *
  * Install:  npm install zustand
- * ─────────────────────────────────────────────────────────────────────────────
+ * ────────────────────────────────────────────────────────────────
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,6 +14,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { buildingCost, getWorld, greenhouseCost, WORLDS } from '../features/worlds/worldData';
 import { getPlant } from '../features/worlds/plantData';
 import { GENES, getGene } from '../features/worlds/geneData';
+import { LEVELS, GameStatus } from '../constants/levels';
 
 /** Combined multiplier for `key` across a world's researched genes (defaults to 1). */
 const geneMultiplier = (researchedGenes, key) =>
@@ -44,20 +45,27 @@ const makeWorldState = (worldDef) => ({
   currentContinentIndex: 0,
 });
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────
 const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
 
-// ─── store ────────────────────────────────────────────────────────────────────
+// ─── store ───────────────────────────────────────────────────────────
 const useGameStore = create(persist((set, get) => ({
 
-  // ── state ──────────────────────────────────────────────────────────────────
+  // ── state ───────────────────────────────────────────────────────────
   activeWorldId: 'kepler9b',
-  // story intros already confirmed by the player ('gameIntro' or a world id)
   seenIntros: [],
   worlds: Object.fromEntries(
     WORLDS.map(w => [w.id, makeWorldState(w)])
   ),
   tickIntervalId: null,
+
+  // ── LEVEL SYSTEM STATE ───────────────────────────────────────────────
+  gameStatus: GameStatus.MENU,
+  currentLevel: null,
+  completedLevels: [],
+  totalXP: 0,
+  levelStartTime: null,
+  levelTimeRemaining: null,
 
   // ── selectors (derived) ────────────────────────────────────────────────────
   getActiveWorld() {
@@ -94,12 +102,110 @@ const useGameStore = create(persist((set, get) => ({
     return { total, repaired };
   },
 
-  // ── actions ────────────────────────────────────────────────────────────────
+  /** Get level by ID */
+  getLevel(levelId) {
+    return LEVELS.find(l => l.id === levelId);
+  },
 
-  /** Mark a story intro (gameIntro or world id) as seen */
+  /** Check if level is unlocked */
+  isLevelUnlocked(levelId) {
+    if (levelId === 1) return true;
+    const prevLevel = LEVELS.find(l => l.id === levelId - 1);
+    return prevLevel ? get().completedLevels.includes(prevLevel.id) : false;
+  },
+
+  /** Evaluate if current level is won */
+  checkLevelWin() {
+    const { currentLevel, gameStatus } = get();
+    if (!currentLevel || gameStatus !== GameStatus.PLAYING) return false;
+
+    const level = get().getLevel(currentLevel);
+    if (!level) return false;
+
+    const world = get().worlds[level.world];
+    if (!world) return false;
+
+    // Simple win condition check: health >= targetHealth
+    return world.health >= level.targetHealth;
+  },
+
+  /** Evaluate if current level is lost (time expired) */
+  checkLevelLoss() {
+    const { levelTimeRemaining } = get();
+    return levelTimeRemaining !== null && levelTimeRemaining <= 0;
+  },
+
+  // ── actions ──────────────────────────────────────────────────────────
+
+  /** Mark a story intro as seen */
   markIntroSeen(introId) {
     if (get().seenIntros.includes(introId)) return;
     set(state => ({ seenIntros: [...state.seenIntros, introId] }));
+  },
+
+  /** Start a level */
+  startLevel(levelId) {
+    const level = get().getLevel(levelId);
+    if (!level) return false;
+
+    // Reset world state for this level
+    const worldDef = getWorld(level.world);
+    set(state => ({
+      gameStatus: GameStatus.PLAYING,
+      currentLevel: levelId,
+      levelStartTime: Date.now(),
+      levelTimeRemaining: level.timeLimit,
+      worlds: {
+        ...state.worlds,
+        [level.world]: {
+          ...makeWorldState(worldDef),
+          energy: level.startResources.energy,
+          biomass: level.startResources.biomass,
+        },
+      },
+    }));
+    return true;
+  },
+
+  /** Complete current level */
+  completeLevel() {
+    const { currentLevel } = get();
+    if (!currentLevel) return false;
+
+    const level = get().getLevel(currentLevel);
+    if (!level) return false;
+
+    set(state => ({
+      gameStatus: GameStatus.LEVEL_COMPLETE,
+      completedLevels: state.completedLevels.includes(currentLevel)
+        ? state.completedLevels
+        : [...state.completedLevels, currentLevel],
+      totalXP: state.totalXP + level.reward.xp,
+    }));
+    return true;
+  },
+
+  /** Fail current level */
+  failLevel() {
+    set({ gameStatus: GameStatus.LEVEL_FAILED });
+  },
+
+  /** Return to menu */
+  returnToMenu() {
+    set({
+      gameStatus: GameStatus.MENU,
+      currentLevel: null,
+      levelStartTime: null,
+      levelTimeRemaining: null,
+    });
+  },
+
+  /** Restart current level */
+  restartLevel() {
+    const { currentLevel } = get();
+    if (currentLevel) {
+      get().startLevel(currentLevel);
+    }
   },
 
   /** Manual tap — grants +1 energy to active world */
@@ -173,7 +279,7 @@ const useGameStore = create(persist((set, get) => ({
     return true;
   },
 
-  /** Spend energy to explore a planet zone, revealing its soil/damage info */
+  /** Spend energy to explore a planet zone */
   exploreZone(worldId, zoneId) {
     const id = worldId || get().activeWorldId;
     const w  = get().worlds[id];
@@ -202,7 +308,7 @@ const useGameStore = create(persist((set, get) => ({
     return true;
   },
 
-  /** Plant a seedling in an explored, empty zone whose soil it can grow on */
+  /** Plant a seedling in an explored, empty zone */
   plantInZone(worldId, zoneId, plantId) {
     const id = worldId || get().activeWorldId;
     const w  = get().worlds[id];
@@ -233,7 +339,7 @@ const useGameStore = create(persist((set, get) => ({
     return true;
   },
 
-  /** Spend seeds to permanently research a gene/quality upgrade */
+  /** Spend seeds to research a gene */
   researchGene(worldId, geneId) {
     const id   = worldId || get().activeWorldId;
     const w    = get().worlds[id];
@@ -291,7 +397,6 @@ const useGameStore = create(persist((set, get) => ({
     const worldDef = getWorld(worldId);
     if (!worldDef.unlockCost) return false;
 
-    // check costs across all worlds (energy pooled from active world only)
     const active = get().getActiveWorld();
     const { energy: eCost = 0, biomass: bCost = 0 } = worldDef.unlockCost;
     if (active.energy < eCost || active.biomass < bCost) return false;
@@ -314,10 +419,10 @@ const useGameStore = create(persist((set, get) => ({
     return true;
   },
 
-  // ── game loop ──────────────────────────────────────────────────────────────
+  // ── game loop ─────────────────────────────────────────────────────────
 
   startGameLoop() {
-    if (get().tickIntervalId) return;          // already running
+    if (get().tickIntervalId) return;
 
     const intervalId = setInterval(() => {
       get().tick();
@@ -334,10 +439,15 @@ const useGameStore = create(persist((set, get) => ({
     }
   },
 
-  /** 1-second tick: accrue resources for every unlocked world */
+  /** 1-second tick: accrue resources + level timer */
   tick() {
     set(state => {
       const updatedWorlds = { ...state.worlds };
+
+      // Update level timer
+      if (state.gameStatus === GameStatus.PLAYING && state.levelTimeRemaining !== null) {
+        state.levelTimeRemaining = Math.max(0, state.levelTimeRemaining - 1);
+      }
 
       for (const worldId of Object.keys(updatedWorlds)) {
         const w = updatedWorlds[worldId];
@@ -355,7 +465,6 @@ const useGameStore = create(persist((set, get) => ({
         const dHealth  = dBiomass     * def.terraformRate;
         const dSeeds   = w.greenhouseCount * def.greenhouse.seedRatePerLevel * seedRateMult;
 
-        // advance growing plants, collecting health repaired this tick
         let plantHealthGain = 0;
         const updatedZoneState = { ...w.zoneState };
         for (const [zoneId, zone] of Object.entries(w.zoneState)) {
@@ -383,17 +492,19 @@ const useGameStore = create(persist((set, get) => ({
         };
       }
 
-      return { worlds: updatedWorlds };
+      return { worlds: updatedWorlds, levelTimeRemaining: state.levelTimeRemaining };
     });
   },
+
 }), {
   name:    'genesis-save-v1',
   storage: createJSONStorage(() => AsyncStorage),
-  // persist only durable game data — never the running tick interval
   partialize: (state) => ({
     activeWorldId: state.activeWorldId,
     seenIntros:    state.seenIntros,
     worlds:        state.worlds,
+    completedLevels: state.completedLevels,
+    totalXP: state.totalXP,
   }),
 }));
 
