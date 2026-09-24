@@ -218,7 +218,7 @@ function finishCheckin(g) {
 
 function updateGuest(g, dt, def, hs) {
   // pop in after spawning, shrink away on the way out through the garden
-  const target = g.state === 'leave' && g.pos[1] > 14 ? 0 : 1;
+  const target = g.state === 'leave' && g.pos[1] > 19.5 ? 0 : 1;
   g.alpha += Math.sign(target - g.alpha) * Math.min(Math.abs(target - g.alpha), dt * 2.5);
 
   if (g.tip) {

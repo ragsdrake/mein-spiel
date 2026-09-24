@@ -6,7 +6,7 @@
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import {
   ATTRACTION_SPOTS, BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
   receptionUpgradeCost, roomUpgradeCost,
@@ -16,8 +16,9 @@ import useHotel from '../../game/store';
 import useUi from '../../game/ui';
 import Bed from './Beds';
 import EXTERIORS from './exteriors';
+import Street from './Street';
 import { Candelabra, Candle, Cobweb, GOLD, Padlock, Painting, Table, Torch, Window } from './Props';
-import { Ball, Blob, Box, Cyl, Halo, M, Rock, Sprite, rand } from './primitives';
+import { Ball, Blob, Box, Cyl, Halo, M, Rock } from './primitives';
 import { useTheme } from './theme';
 
 // ─── tap targets & upgrade markers ──────────────────────────────────────────
@@ -84,33 +85,44 @@ function Room({ index }) {
         </group>
       ) : (
         <group>
-          <Box p={[0, 0.015, 0.1]} s={[2.5, 0.03, 2.1]} mat={M(level >= 4 ? palette.rugHi : palette.rug, { tx: 'fabric' })} cast={false} />
-          <Box p={[0, 0.03, 0.1]} s={[2.1, 0.02, 1.7]} mat={M(level >= 4 ? palette.rug : palette.rugHi, { tx: 'fabric' })} cast={false} />
+          {/* accent rug, bed, and a fully furnished room from level 1 */}
+          <Box p={[0, 0.025, 0.25]} s={[2.1, 0.02, 1.5]} mat={M(palette.rugHi)} cast={false} />
           <group position={[0, 0.03, -0.35]}>
             <Bed kind={theme.bed} level={level} />
           </group>
-          <Box p={[1.15, 0.3, -1.05]} s={[0.45, 0.6, 0.4]} mat={M(palette.wood, { tx: 'planks', bump: 0.8 })} />
+          <Box p={[1.15, 0.3, -1.05]} s={[0.45, 0.6, 0.4]} mat={M(palette.wood)} />
           <Candle p={[1.15, 0.6, -1.05]} />
-          <Halo p={[1.15, 0.04, -0.9]} size={1.6} color={palette.warm} opacity={0.22} />
-          {level >= 2 && <Painting p={[0, 2.1, -1.42]} hue={index % 2 ? '#40506e' : '#3c6b5a'} />}
-          {level >= 4 && (
-            <group position={[-1.15, 0, -0.95]}>
-              <Box p={[0, 0.8, 0]} s={[0.55, 1.6, 0.5]} mat={M(palette.woodDark, { tx: 'planks', bump: 0.8 })} />
-              <Box p={[0, 0.8, 0.26]} s={[0.02, 1.4, 0.02]} mat={GOLD()} cast={false} />
-            </group>
-          )}
-          {level >= 6 && <Candelabra p={[-1.15, 0, 0.75]} gold />}
+          <group position={[-1.15, 0, -1.0]}>
+            <Box p={[0, 0.75, 0]} s={[0.55, 1.5, 0.45]} mat={M(palette.woodDark)} />
+            <Box p={[0, 0.75, 0.23]} s={[0.02, 1.3, 0.02]} mat={level >= 4 ? GOLD() : M(palette.wood)} cast={false} />
+          </group>
+          {/* armchair */}
+          <group position={[1.1, 0, 0.95]} rotation={[0, -0.6, 0]}>
+            <Box p={[0, 0.2, 0]} s={[0.55, 0.4, 0.5]} mat={M(palette.zoneLounge)} />
+            <Box p={[0, 0.5, -0.2]} s={[0.55, 0.5, 0.12]} mat={M(palette.zoneLounge)} />
+            <Box p={[0.25, 0.32, 0]} s={[0.08, 0.3, 0.5]} mat={M(palette.zoneLounge)} />
+            <Box p={[-0.25, 0.32, 0]} s={[0.08, 0.3, 0.5]} mat={M(palette.zoneLounge)} />
+          </group>
+          {/* suitcase */}
+          <group position={[-0.95, 0, 0.95]} rotation={[0, 0.4, 0]}>
+            <Box p={[0, 0.22, 0]} s={[0.45, 0.42, 0.18]} mat={M(palette.zoneDesk)} />
+            <Box p={[0, 0.47, 0]} s={[0.18, 0.06, 0.05]} mat={M('#2c2433')} />
+          </group>
+          {/* floor lamp */}
+          <group position={[1.3, 0, -0.35]}>
+            <Cyl p={[0, 0.5, 0]} rt={0.025} h={1} seg={5} c="#3a3440" />
+            <Cyl p={[0, 1.05, 0]} rt={0.12} rb={0.2} h={0.22} seg={8} mat={M('#fff4d8', { emissive: '#ffe0a0', intensity: 0.5 })} />
+          </group>
+          {level >= 2 && <Painting p={[0, 1.8, -1.42]} hue={index % 2 ? '#40506e' : '#3c6b5a'} />}
+          {level >= 6 && <Candelabra p={[-1.25, 0, 0.2]} gold />}
           {level >= 8 && (
-            <group position={[1.15, 0, 0.8]}>
+            <group position={[-0.3, 0, 1.15]}>
               <Cyl p={[0, 0.2, 0]} rt={0.18} rb={0.13} h={0.4} seg={8} c="#8a4a8f" />
-              <Rock p={[0, 0.6, 0]} rad={0.28} sc={[1, 1.3, 1]} c="#3f6b45" detail={1} />
+              <Rock p={[0, 0.6, 0]} rad={0.28} sc={[1, 1.3, 1]} c="#3fb84a" />
             </group>
           )}
           {level >= 10 && (
-            <group position={[0, 2.5, 0]}>
-              <Ball rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: palette.windowGlow, intensity: 2.2 })} />
-              <Sprite size={2.2} color={palette.windowGlow} opacity={0.4} />
-            </group>
+            <Ball p={[0, 2.3, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: palette.windowGlow, intensity: 0.8 })} />
           )}
           {dirty && <Puddle index={index} showHint={!hasCleaner} color={palette.slime} />}
           <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
@@ -150,83 +162,76 @@ function Puddle({ index, showHint, color }) {
 }
 
 // ─── building shell ──────────────────────────────────────────────────────────
+/** Floor zones: one strong colour per area, like the tycoon references. */
+const ZONES = [
+  // rooms along the back wall and the left wall
+  ['zoneRoom', 0, 3.5, 0, 3.2], ['zoneRoom', 3.5, 6.5, 0, 3.2], ['zoneRoom', 6.5, 9.5, 0, 3.2], ['zoneRoom', 9.5, 12.5, 0, 3.2],
+  ['zoneRoom', 0, 3.2, 3.6, 6.7], ['zoneRoom', 0, 3.2, 6.7, 9.7],
+  ['zoneBar', 4.4, 10.8, 4.4, 7.3],
+  ['zoneLounge', 4.4, 9.2, 7.7, 12],
+  ['zoneDesk', 8.6, 11.4, 8.1, 12],
+];
+
+const WALL_H = 2.8;
+const WALL_T = 0.5;
+
 function Shell({ Ext }) {
-  const { palette, id } = useTheme();
-  const wall = M(palette.wall, { tx: palette.wallTex, rx: 7, ry: 1.7, bump: 2 });
-  const wallSide = M(palette.wall, { tx: palette.wallTex, rx: 6, ry: 1.7, bump: 2 });
-  const lowWall = M(palette.wall, { tx: palette.wallTex, rx: 6, ry: 0.5, bump: 2 });
-  const trim = M(palette.trim, id === 'pyramide' ? { metal: 0.6, rough: 0.35 } : {});
-  const beam = M(id === 'pyramide' || id === 'eispalast' ? palette.trim : palette.wood, { tx: 'planks', bump: 0.6 });
-  const stones = useMemo(() => {
-    const out = [];
-    for (let i = 0; i < 26; i++) out.push([1.2 + i * 0.5 + rand(i) * 0.2, 3.9 + (rand(i + 50) - 0.5) * 0.6, i]);
-    for (let i = 0; i < 18; i++) out.push([12.6 + (rand(i + 90) - 0.5) * 1.4, 4.5 + i * 0.45, i + 100]);
-    return out;
-  }, []);
+  const { palette } = useTheme();
+  const wall = M(palette.wall);
+  const cap = M(palette.wallTop);
+  const base = M(palette.woodDark);
 
   return (
     <group>
-      {/* foundation + floor */}
-      <Box p={[7, -0.45, 6]} s={[14.6, 0.7, 12.6]} mat={M(palette.wall, { tx: 'stone', rx: 6, ry: 1, bump: 2 })} />
-      <Box p={[7, -0.05, 6]} s={[14, 0.1, 12]} mat={M(palette.floorA, { tx: palette.floorTex, rx: 7, ry: 6, bump: 1.2 })} cast={false} />
-      {stones.map(([x, z, k]) => (
-        <Cyl key={k} p={[x, 0.02, z]} rt={0.22 + rand(k + 7) * 0.12} h={0.05} seg={7}
-          r={[0, rand(k) * 3, 0]} mat={M(palette.path, { tx: 'stone', bump: 1 })} cast={false} />
+      {/* foundation + neutral floor + coloured zones (small inset = visible seams) */}
+      <Box p={[7, -0.45, 6]} s={[14.8, 0.7, 12.8]} mat={M(palette.wall)} />
+      <Box p={[7, -0.05, 6]} s={[14, 0.1, 12]} mat={M(palette.floorA, { tx: palette.floorTex, rx: 7, ry: 6 })} cast={false} />
+      {ZONES.map(([key, x0, x1, z0, z1], i) => (
+        <Box key={i} p={[(x0 + x1) / 2, 0.005, (z0 + z1) / 2]} s={[x1 - x0 - 0.08, 0.02, z1 - z0 - 0.08]}
+          mat={M(palette[key], { tx: 'cleanTiles', rx: Math.round(x1 - x0), ry: Math.round(z1 - z0) })} cast={false} />
       ))}
 
-      {/* back wall (z = 0) */}
-      <Box p={[7, 1.7, -0.15]} s={[14.3, 3.4, 0.3]} mat={wall} />
-      <Box p={[7, 0.15, 0.02]} s={[14.3, 0.3, 0.06]} mat={M(palette.woodDark)} />
-      <Box p={[7, 3.45, -0.1]} s={[14.6, 0.25, 0.5]} mat={trim} />
-      {[0.15, 3.5, 6.5, 9.5, 12.5].map(x => (
-        <Box key={x} p={[x, 1.7, 0.04]} s={[0.26, 3.4, 0.1]} mat={beam} />
-      ))}
-      {[2, 5, 8, 11].map(x => (
-        <group key={x}>
-          <Window p={[x, 2.25, 0.04]} />
-          <Halo p={[x + 0.4, 0.04, 1.2]} size={2.2} color={palette.windowGlow} opacity={0.14} />
-        </group>
-      ))}
-      <Torch p={[6.5, 2.3, 0.05]} />
-      <Torch p={[12.5, 2.3, 0.05]} />
+      {/* back wall (z = 0): thick, low, light top cap shows the cut */}
+      <Box p={[7, WALL_H / 2, -WALL_T / 2]} s={[14 + WALL_T, WALL_H, WALL_T]} mat={wall} />
+      <Box p={[7, WALL_H + 0.04, -WALL_T / 2]} s={[14 + WALL_T + 0.04, 0.08, WALL_T + 0.04]} mat={cap} />
+      <Box p={[7, 0.1, 0.02]} s={[14, 0.2, 0.05]} mat={base} cast={false} />
+      {[2, 5, 8, 11].map(x => <Window key={x} p={[x, 1.75, 0.03]} />)}
+      <Torch p={[6.5, 1.9, 0.04]} />
+      <Torch p={[12.5, 1.9, 0.04]} />
 
       {/* left wall (x = 0) */}
-      <Box p={[-0.15, 1.7, 6]} s={[0.3, 3.4, 12.3]} mat={wallSide} />
-      <Box p={[0.02, 0.15, 6]} s={[0.06, 0.3, 12.3]} mat={M(palette.woodDark)} />
-      <Box p={[-0.1, 3.45, 6]} s={[0.5, 0.25, 12.6]} mat={trim} />
-      {[3.6, 6.7, 9.7, 12].map(z => (
-        <Box key={z} p={[0.04, 1.7, z]} s={[0.1, 3.4, 0.26]} mat={beam} />
-      ))}
-      {[5.2, 8.2, 10.9].map(z => <Window key={z} p={[0.04, 2.25, z]} r={[0, Math.PI / 2, 0]} />)}
-      <Torch p={[0.05, 2.3, 9.7]} r={[0, Math.PI / 2, 0]} />
+      <Box p={[-WALL_T / 2, WALL_H / 2, 6]} s={[WALL_T, WALL_H, 12]} mat={wall} />
+      <Box p={[-WALL_T / 2, WALL_H + 0.04, 6]} s={[WALL_T + 0.04, 0.08, 12.04]} mat={cap} />
+      <Box p={[0.02, 0.1, 6]} s={[0.05, 0.2, 12]} mat={base} cast={false} />
+      {[5.2, 8.2, 10.9].map(z => <Window key={z} p={[0.03, 1.75, z]} r={[0, Math.PI / 2, 0]} />)}
 
       {Ext.WallTop && <Ext.WallTop />}
 
       {/* room dividers */}
       {[3.5, 6.5, 9.5, 12.5].map(x => (
         <group key={x}>
-          <Box p={[x, 0.65, 1.5]} s={[0.2, 1.3, 3]} mat={M(palette.wall, { tx: palette.wallTex, rx: 1.5, ry: 0.65, bump: 2 })} />
-          <Box p={[x, 1.33, 1.5]} s={[0.3, 0.1, 3.1]} mat={trim} />
+          <Box p={[x, 0.6, 1.6]} s={[0.3, 1.2, 3.2]} mat={wall} />
+          <Box p={[x, 1.23, 1.6]} s={[0.34, 0.06, 3.24]} mat={cap} />
         </group>
       ))}
       {[3.6, 6.7, 9.7].map(z => (
         <group key={z}>
-          <Box p={[1.5, 0.65, z]} s={[3, 1.3, 0.2]} mat={M(palette.wall, { tx: palette.wallTex, rx: 1.5, ry: 0.65, bump: 2 })} />
-          <Box p={[1.5, 1.33, z]} s={[3.1, 0.1, 0.3]} mat={trim} />
+          <Box p={[1.6, 0.6, z]} s={[3.2, 1.2, 0.3]} mat={wall} />
+          <Box p={[1.6, 1.23, z]} s={[3.24, 0.06, 0.34]} mat={cap} />
         </group>
       ))}
 
       {/* low front walls with the entrance gap (x 11.8 … 13.9) */}
-      <Box p={[5.9, 0.4, 12.15]} s={[11.8, 0.8, 0.3]} mat={lowWall} />
-      <Box p={[5.9, 0.84, 12.15]} s={[11.9, 0.1, 0.4]} mat={trim} />
-      <Box p={[14.15, 0.4, 6]} s={[0.3, 0.8, 12.3]} mat={lowWall} />
-      <Box p={[14.15, 0.84, 6]} s={[0.4, 0.1, 12.4]} mat={trim} />
+      <Box p={[5.9, 0.35, 12.2]} s={[11.8, 0.7, 0.4]} mat={wall} />
+      <Box p={[5.9, 0.73, 12.2]} s={[11.84, 0.06, 0.44]} mat={cap} />
+      <Box p={[14.2, 0.35, 6]} s={[0.4, 0.7, 12.4]} mat={wall} />
+      <Box p={[14.2, 0.73, 6]} s={[0.44, 0.06, 12.44]} mat={cap} />
       {[11.8, 13.95].map(x => (
         <group key={x}>
-          <Box p={[x, 0.8, 12.15]} s={[0.35, 1.6, 0.35]} mat={beam} />
-          <Cyl p={[x, 1.72, 12.15]} rt={0.14} rb={0.1} h={0.25} seg={6} mat={M('#2c2433', { metal: 0.5 })} />
-          <Ball p={[x, 1.74, 12.15]} rad={0.09} w={6} hs={4} mat={M('#fff1b8', { emissive: palette.warm, intensity: 3 })} cast={false} />
-          <Sprite p={[x, 1.74, 12.15]} size={1.4} color={palette.warm} opacity={0.55} />
+          <Box p={[x, 0.7, 12.2]} s={[0.4, 1.4, 0.4]} mat={wall} />
+          <Box p={[x, 1.43, 12.2]} s={[0.44, 0.06, 0.44]} mat={cap} />
+          <Cyl p={[x, 1.58, 12.2]} rt={0.14} rb={0.1} h={0.22} seg={6} c="#2c2433" />
+          <Ball p={[x, 1.6, 12.2]} rad={0.09} w={6} hs={4} mat={M('#fff1b8', { emissive: palette.warm, intensity: 1 })} cast={false} />
         </group>
       ))}
 
@@ -349,12 +354,28 @@ function Lounge({ Ext }) {
   const { palette } = useTheme();
   return (
     <group>
-      <Box p={[6.8, 0.02, 10.2]} s={[4.6, 0.03, 3.6]} mat={M(palette.lounge, { tx: 'fabric' })} cast={false} />
-      <Box p={[6.8, 0.025, 10.2]} s={[4.2, 0.03, 3.2]} mat={M(palette.rug, { tx: 'fabric' })} cast={false} />
       <Table p={[6.5, 0, 9.2]} />
       <Table p={[8.2, 0, 11.1]} />
       <Table p={[5.3, 0, 11.3]} />
       <Ext.LoungePiece />
+      {/* waiting sofa + coffee table */}
+      <group position={[3.2, 0, 11.4]} rotation={[0, Math.PI, 0]}>
+        <Box p={[0, 0.22, 0]} s={[1.6, 0.44, 0.6]} mat={M(palette.zoneDesk)} />
+        <Box p={[0, 0.55, 0.24]} s={[1.6, 0.5, 0.14]} mat={M(palette.zoneDesk)} />
+        <Box p={[0.76, 0.36, 0]} s={[0.1, 0.3, 0.6]} mat={M(palette.zoneDesk)} />
+        <Box p={[-0.76, 0.36, 0]} s={[0.1, 0.3, 0.6]} mat={M(palette.zoneDesk)} />
+        <Blob p={[0, 0.02, 0]} size={1.8} />
+      </group>
+      <Box p={[3.2, 0.2, 10.5]} s={[0.9, 0.08, 0.5]} mat={M(palette.wood)} />
+      <Box p={[3.2, 0.1, 10.5]} s={[0.7, 0.2, 0.3]} mat={M(palette.woodDark)} />
+      {/* potted plants in the corners of the zones */}
+      {[[4.2, 7.9], [9.3, 11.6], [11.3, 7.9], [3.8, 4.2]].map(([x, z]) => (
+        <group key={`${x}${z}`} position={[x, 0, z]}>
+          <Cyl p={[0, 0.2, 0]} rt={0.2} rb={0.15} h={0.4} seg={6} mat={M(palette.wallTop)} />
+          <Rock p={[0, 0.62, 0]} rad={0.3} sc={[1, 1.2, 1]} c="#3fb84a" />
+          <Blob p={[0, 0.02, 0]} size={0.7} />
+        </group>
+      ))}
     </group>
   );
 }
@@ -379,6 +400,7 @@ export default function Hotel() {
       <Bar Ext={Ext} />
       <Lounge Ext={Ext} />
       <Ext.Outside />
+      <Street />
       <Attractions Ext={Ext} />
     </group>
   );

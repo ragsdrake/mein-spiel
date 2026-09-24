@@ -110,14 +110,14 @@ export const ROOMS = [
 ];
 
 export const P = {
-  spawn:       [12.6, 18],
+  spawn:       [12.6, 21],
   door:        [12.6, 12.2],
   queue:       [[11, 9.8], [11.6, 10.7], [12.2, 11.5], [12.6, 12.6]],
   afterDesk:   [11.6, 8.2],
   corridorE:   [11.6, 3.9],
   corridorW:   [3.9, 3.9],
   stools:      [[8.6, 6.2], [7.4, 6.2], [6.2, 6.2], [5, 6.2]],
-  exit:        [12.6, 19],
+  exit:        [13.4, 21],
   reception:   [9.2, 9.6],
   bar:         [6.8, 4.5],
   cleanerIdle: [2.9, 10.2],

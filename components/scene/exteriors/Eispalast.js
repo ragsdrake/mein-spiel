@@ -51,9 +51,9 @@ function Igloo({ p, r = 0, s = 1 }) {
 
 function FrozenLake() {
   return (
-    <mesh position={[4, -0.48, 17]} rotation={[-Math.PI / 2, 0, 0]}
+    <mesh position={[3.5, -0.48, 16]} rotation={[-Math.PI / 2, 0, 0]}
       material={M('#7fc8f0', { rough: 0.05, metal: 0.5, emissive: '#2a6a9a', intensity: 0.25, tx: 'ice', rx: 3, ry: 2 })}>
-      <circleGeometry args={[4, 16]} />
+      <circleGeometry args={[3.2, 16]} />
     </mesh>
   );
 }

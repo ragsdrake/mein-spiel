@@ -25,26 +25,25 @@ import Sky from './Sky';
 import { ThemeContext, useTheme } from './theme';
 
 const CAM_DIST = 40;
+export const CAM_HEIGHT = 1.3;
 
 
 const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
 
-function CameraRig({ lights }) {
+function CameraRig() {
   const { camera, size } = useThree();
   const intro = useRef(0);
   useFrame(({ clock }, dt) => {
     step(dt);
     const t = clock.elapsedTime;
     flickerMaterials(t);
-    lights.current?.forEach((l, i) => {
-      if (l) l.intensity = l.userData.base * (0.85 + Math.sin(t * 9 + i * 2) * 0.08 + Math.sin(t * 17 + i) * 0.07);
-    });
 
     // gentle zoom-in whenever a hotel is (re)entered
     intro.current = Math.min(1, intro.current + dt / 1.6);
     const introZoom = 0.72 + 0.28 * easeOutCubic(intro.current);
 
-    camera.position.set(cam.x + CAM_DIST, CAM_DIST * 1.02, cam.z + CAM_DIST);
+    // steeper tycoon view (~42.6° pitch): more floor, less wall
+    camera.position.set(cam.x + CAM_DIST, CAM_DIST * CAM_HEIGHT, cam.z + CAM_DIST);
     camera.lookAt(cam.x, 0, cam.z);
     const zoom = (size.width / FIT_WIDTH) * cam.zoom * introZoom;
     if (Math.abs(camera.zoom - zoom) > 1e-3) {
@@ -55,50 +54,44 @@ function CameraRig({ lights }) {
   return null;
 }
 
-function Lights({ shadows, lights }) {
+function Lights({ shadows }) {
   const { palette } = useTheme();
-  const reg = (i, base) => (l) => {
-    if (!l) return;
-    l.userData.base = base;
-    lights.current[i] = l;
-  };
-  // Bright, high-key "tycoon" lighting: a strong sky fill plus one sun that
-  // casts crisp shadows. Colours stay clean and saturated (no tone mapping).
+  // Classic three-tone tycoon shading: one strong sun from above/right so every
+  // block shows a bright top, a mid-tone right side and a darker left side,
+  // plus a flat fill. No point lights, no glow.
   return (
     <group>
-      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 1.9]} />
+      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 0.75]} />
+      <ambientLight intensity={0.55} />
       <directionalLight
-        position={[16, 30, 10]}
-        intensity={2.1}
+        position={[12, 24, 3.5]}
+        intensity={2.3}
         color={palette.key}
         castShadow={shadows}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-22}
-        shadow-camera-right={22}
-        shadow-camera-top={22}
-        shadow-camera-bottom={-22}
+        shadow-camera-left={-24}
+        shadow-camera-right={24}
+        shadow-camera-top={24}
+        shadow-camera-bottom={-24}
         shadow-camera-near={1}
         shadow-camera-far={90}
         shadow-bias={-0.0012}
         shadow-normalBias={0.03}
-        shadow-radius={2}
+        shadow-radius={3}
       />
-      <pointLight ref={reg(0, 3)} position={[6.5, 2.2, 10]} color={palette.warm} intensity={3} distance={6} decay={1.6} />
-      <pointLight ref={reg(1, 3)} position={[8.4, 1.8, 4.3]} color={palette.accentLight} intensity={3} distance={5} decay={1.6} />
     </group>
   );
 }
 
 function World({ hotelId, quality }) {
-  const lights = useRef([]);
   const def = getHotel(hotelId);
   const q = QUALITY[quality] ?? QUALITY.medium;
   return (
     <ThemeContext.Provider value={def}>
       <color attach="background" args={[def.palette.bg]} />
       <fog attach="fog" args={[def.palette.fog, 95, 170]} />
-      <CameraRig key={hotelId} lights={lights} />
-      <Lights shadows={q.shadows} lights={lights} />
+      <CameraRig key={hotelId} />
+      <Lights shadows={q.shadows} />
       <Sky />
       <Hotel />
       <Actors />

@@ -67,6 +67,9 @@ function BubbleZzz() {
   );
 }
 
+/** Characters are drawn ~20 % larger than the old models so they read at a distance. */
+const CHAR_SCALE = 1.2;
+
 const easeOutBack = (x) => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
 
 function GuestActor({ id }) {
@@ -118,7 +121,7 @@ function GuestActor({ id }) {
   return (
     <group ref={root} onClick={(e) => { e.stopPropagation(); tapGuest(id); }}>
       <group ref={body}>
-        <group ref={lie}>
+        <group ref={lie} scale={CHAR_SCALE}>
           <Character def={def} motion={motion} />
         </group>
       </group>
@@ -141,20 +144,29 @@ function Guests() {
   return ids.map(id => <GuestActor key={id} id={id} />);
 }
 
+const CASH = M('#3fce6a');
+const CASH_BAND = M('#e8fff0');
+
+/** Green money bundle that pops up and rises when a guest pays. */
 function CoinFx({ id }) {
   const ref = useRef();
   const tip = sim.fx.get(id)?.kind === 'tip';
   useFrame(() => {
     const f = sim.fx.get(id);
     if (!f || !ref.current) return;
-    ref.current.position.set(f.pos[0], 1.3 + f.t * 1.4, f.pos[1]);
-    ref.current.rotation.y = f.t * 9;
-    ref.current.scale.setScalar((tip ? 1.6 : 1) * (f.t < 0.15 ? f.t / 0.15 : 1 - Math.max(0, f.t - 0.8) / 0.4));
+    ref.current.position.set(f.pos[0], 1.5 + f.t * 1.3, f.pos[1]);
+    ref.current.rotation.y = 0.6 + f.t * 2;
+    const pop = f.t < 0.2 ? easeOutBack(f.t / 0.2) : 1 - Math.max(0, f.t - 0.85) / 0.35;
+    ref.current.scale.setScalar(Math.max(0.001, (tip ? 1.5 : 1) * pop));
   });
   return (
     <group ref={ref}>
-      <Cyl rt={0.2} h={0.06} seg={14} r={[Math.PI / 2, 0, 0]} mat={COIN} cast={false} />
-      <Sprite size={0.9} color="#ffc94a" opacity={0.5} />
+      {[0, 1, 2].map(i => (
+        <group key={i} position={[0, i * 0.09, 0]} rotation={[0, i * 0.15, 0]}>
+          <Box s={[0.5, 0.08, 0.26]} mat={CASH} cast={false} />
+          <Box s={[0.1, 0.085, 0.265]} mat={CASH_BAND} cast={false} />
+        </group>
+      ))}
     </group>
   );
 }
@@ -173,7 +185,7 @@ function Idle({ p, face = 0, speed = 1.5, children }) {
   });
   return (
     <group position={[p[0], 0, p[1]]} rotation={[0, face, 0]}>
-      <group ref={ref}>{children}</group>
+      <group ref={ref} scale={CHAR_SCALE}>{children}</group>
       <Blob size={0.9} />
     </group>
   );
@@ -199,7 +211,7 @@ function CleanerActor({ def }) {
   });
   return (
     <group ref={ref}>
-      <group ref={inner}><Character def={def} motion={motion} /></group>
+      <group ref={inner} scale={CHAR_SCALE}><Character def={def} motion={motion} /></group>
       <Blob size={0.9} />
     </group>
   );
@@ -221,11 +233,62 @@ function Staff() {
   );
 }
 
+// ─── ambient crowd: passers-by on the sidewalk and guests relaxing inside ────
+const SIT_MOTION = { current: { moving: false } };
+
+function Passerby({ def, z, speed, offset, dir }) {
+  const ref = useRef();
+  const motion = useRef({ moving: true, phase: offset });
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const span = 44;
+    const d = (clock.elapsedTime * speed + offset) % span;
+    ref.current.position.set(dir > 0 ? -14 + d : 30 - d, -0.45, z);
+    ref.current.rotation.y = dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+  });
+  return (
+    <group ref={ref}>
+      <group scale={CHAR_SCALE}><Character def={def} motion={motion} /></group>
+      <Blob size={0.8} />
+    </group>
+  );
+}
+
+/** Seats: [x, z, facing] on the lounge chairs and the sofa. */
+const SEATS = [
+  [5.65, 9.2, -Math.PI / 2], [7.35, 9.2, Math.PI / 2], [7.35, 11.1, -Math.PI / 2],
+  [9.05, 11.1, Math.PI / 2], [4.45, 11.3, -Math.PI / 2], [6.15, 11.3, Math.PI / 2],
+  [2.8, 11.35, Math.PI], [3.6, 11.35, Math.PI],
+];
+
+function Crowd() {
+  const theme = useTheme();
+  const stars = useHotel(s => s.starsOf(s.activeHotel));
+  const rooms = useHotel(s => s.hotels[s.activeHotel].rooms.filter(Boolean).length);
+  const pool = theme.guests.filter(g => g.star <= stars && !FLOATING.has(g.model));
+  const walkers = pool.length ? pool : theme.guests.filter(g => g.star <= stars);
+  const sitters = Math.min(SEATS.length, 2 + rooms);
+  return (
+    <group>
+      {Array.from({ length: 7 }, (_, i) => (
+        <Passerby key={i} def={walkers[i % walkers.length]} z={i % 2 ? 20.6 : 21.4}
+          speed={1.1 + (i % 3) * 0.25} offset={i * 6.3} dir={i % 2 ? 1 : -1} />
+      ))}
+      {SEATS.slice(0, sitters).map(([x, z, face], i) => (
+        <group key={i} position={[x, 0.18, z]} rotation={[0, face, 0]}>
+          <group scale={CHAR_SCALE}><Character def={walkers[(i + 2) % walkers.length]} motion={SIT_MOTION} /></group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 export default function Actors() {
   return (
     <group>
       <Guests />
       <Staff />
+      <Crowd />
       <Effects />
     </group>
   );

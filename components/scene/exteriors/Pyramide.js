@@ -64,7 +64,7 @@ function Nile() {
     if (ref.current) ref.current.material.emissiveIntensity = 0.35 + Math.sin(clock.elapsedTime * 0.8) * 0.08;
   });
   return (
-    <mesh ref={ref} position={[4, -0.47, 21]} rotation={[-Math.PI / 2, 0, 0.12]}
+    <mesh ref={ref} position={[4, -0.47, 30]} rotation={[-Math.PI / 2, 0, 0.12]}
       material={M('#2a6aa8', { emissive: '#1a4a8a', intensity: 0.35, rough: 0.05, metal: 0.4 })}>
       <planeGeometry args={[40, 3.5]} />
     </mesh>

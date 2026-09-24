@@ -10,7 +10,7 @@ export const CAM_BOUNDS = { minX: 2, maxX: 15, minZ: 2, maxZ: 17, minZoom: 0.7, 
 /** World units visible across the screen width at zoom 1. */
 export const FIT_WIDTH = 17.5;
 
-const SIN_ELEVATION = 0.5774;   // camera sits on the (1, 1, 1) diagonal
+const SIN_ELEVATION = 0.677;    // camera on (1, 1.3, 1): pitch ≈ 42.6°
 
 /** Convert a finger drag (pixels) into a camera move on the ground plane. */
 export function panBy(dx, dy, screenWidth) {

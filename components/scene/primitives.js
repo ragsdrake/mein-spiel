@@ -1,20 +1,23 @@
 /**
- * Low-poly building blocks. Materials are cached per look so the whole hotel
- * shares a handful of GPU programs. Surfaces can carry a procedural texture
- * (`tx`, only the crisp clean-* patterns are applied for the flat tycoon look).
+ * Low-poly building blocks for the flat "hyper-casual tycoon" look:
+ * cheap Lambert solid colours with flat shading (no PBR), cached per look so
+ * the whole hotel shares a handful of GPU programs. Light halos are disabled
+ * so every surface shows the clean three-tone sun shading.
  */
 
-import { AdditiveBlending, Color, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial } from 'three';
+import { AdditiveBlending, MeshBasicMaterial, MeshLambertMaterial, SpriteMaterial } from 'three';
 import { tex } from './textures';
+
+/** Soft glow sprites / floor halos are switched off in the flat look. */
+const GLOW_HALOS = false;
 
 const cache = new Map();
 
 /**
  * Shared material.
- *  - `emissive`/`intensity`: glow (values > 1 bloom on high quality)
- *  - `tx`, `rx`, `ry`:       procedural texture + repeat
- *  - `bump`:                 kept for API compatibility (ignored in the flat look)
- *  - `smooth`:               smooth instead of flat shading
+ *  - `emissive`/`intensity`: self-lit colour (windows, flames, magic)
+ *  - `tx`, `rx`, `ry`:       clean-* pattern + repeat (other patterns are ignored)
+ *  - `metal`, `rough`, `bump`, `smooth`: accepted for API compatibility, ignored
  */
 export function M(color, opts = {}) {
   const {
@@ -23,11 +26,9 @@ export function M(color, opts = {}) {
   const key = `${color}|${emissive}|${intensity}|${opacity}|${metal}|${rough}|${tx}|${rx}|${ry}|${bump}|${smooth}`;
   let m = cache.get(key);
   if (!m) {
-    m = new MeshStandardMaterial({
+    m = new MeshLambertMaterial({
       color,
-      flatShading:  !smooth,
-      roughness:    rough,
-      metalness:    metal,
+      flatShading:  true,
       emissive:     emissive ?? '#000000',
       emissiveIntensity: emissive ? intensity : 0,
       transparent:  opacity != null,
@@ -70,6 +71,7 @@ export function GlowS(color, opacity = 0.6) {
 
 /** Glowing sprite of `size` world units. */
 export function Sprite({ p = [0, 0, 0], size = 1, color = '#ffb347', opacity = 0.6 }) {
+  if (!GLOW_HALOS) return null;
   return <sprite position={p} scale={[size, size, 1]} material={GlowS(color, opacity)} renderOrder={3} />;
 }
 
@@ -82,30 +84,15 @@ export const SHADOW_BLOB = new MeshBasicMaterial({
  * Standard material with a fresnel rim glow — ghosts, ice and magic look
  * like they emit light around their silhouette.
  */
-export function RimM(color, rim, { strength = 1.4, opacity, emissive, intensity = 0.3, rough = 0.5 } = {}) {
-  const key = `rim|${color}|${rim}|${strength}|${opacity}|${emissive}|${intensity}|${rough}`;
+export function RimM(color, rim, { opacity, emissive, intensity = 0.15 } = {}) {
+  // flat look: no fresnel shader, just a slightly self-lit solid colour
+  const key = `rim|${color}|${rim}|${opacity}|${emissive}|${intensity}`;
   let m = cache.get(key);
   if (!m) {
-    m = new MeshStandardMaterial({
-      color, roughness: rough, flatShading: true,
-      emissive: emissive ?? rim, emissiveIntensity: intensity,
+    m = new MeshLambertMaterial({
+      color, flatShading: true, emissive: emissive ?? rim, emissiveIntensity: intensity,
       transparent: opacity != null, opacity: opacity ?? 1, depthWrite: opacity == null || opacity > 0.6,
     });
-    const rimColor = new Color(rim);
-    m.onBeforeCompile = (shader) => {
-      shader.uniforms.rimColor = { value: rimColor };
-      shader.uniforms.rimStrength = { value: strength };
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform vec3 rimColor;\nuniform float rimStrength;')
-        .replace(
-          '#include <emissivemap_fragment>',
-          `#include <emissivemap_fragment>
-          vec3 rimView = isOrthographic ? vec3( 0.0, 0.0, 1.0 ) : normalize( vViewPosition );
-          float rimF = 1.0 - saturate( dot( normalize( normal ), rimView ) );
-          totalEmissiveRadiance += rimColor * pow( rimF, 2.2 ) * rimStrength;`,
-        );
-    };
-    m.customProgramCacheKey = () => 'rim';
     cache.set(key, m);
   }
   return m;
@@ -119,8 +106,8 @@ export function FlameM(color = '#ffcf6b', glow = '#ffae3b', base = 2.4) {
   const key = `flame|${color}|${glow}|${base}`;
   let m = cache.get(key);
   if (!m) {
-    m = new MeshStandardMaterial({ color, emissive: glow, emissiveIntensity: base, flatShading: true });
-    m.userData.base = base;
+    m = new MeshLambertMaterial({ color, emissive: glow, emissiveIntensity: base * 0.4, flatShading: true });
+    m.userData.base = base * 0.4;
     m.userData.seed = flickerList.length * 1.7;
     flickerList.push(m);
     cache.set(key, m);
@@ -189,6 +176,7 @@ export function Torus({ p = [0, 0, 0], rad = 0.2, tube = 0.04, seg = 8, arc = Ma
 
 /** Flat halo sprite lying on the ground or facing up (additive). */
 export function Halo({ p = [0, 0, 0], size = 1, color = '#ffb347', opacity = 0.5, r = [-Math.PI / 2, 0, 0] }) {
+  if (!GLOW_HALOS) return null;
   return (
     <mesh position={p} rotation={r} material={Glow(color, opacity)} renderOrder={2}>
       <planeGeometry args={[size, size]} />

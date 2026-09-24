@@ -15,7 +15,9 @@ Gäste checken ein, schlafen, trinken an der Bar, zahlen und geben Trinkgeld –
 automatisiert die Arbeit, und nicht besuchte Hotels verdienen nebenbei weiter.
 
 Look & Bedienung orientieren sich an den Codigames-Tycoons (Idle Supermarket, Theme Park,
-Prison Empire): helle, kräftige Flat-Shading-Welt, kleine blockige Figuren mit Lauf-Animation,
+Prison Empire): Lambert-Flat-Shading mit klarer Drei-Ton-Sonne, helle dicke Schnittwände,
+eine kräftige Bodenfarbe pro Zone (Zimmer, Bar, Lounge, Rezeption), voll eingerichtete Räume,
+Straße mit Verkehr und Passanten, blockige Figuren mit Lauf-Animation,
 Geld + Einkommen/Sekunde oben links, Video-×2-Button, weiße Upgrade-Karten mit ×1/×10/MAX,
 Meilensteinen und Mitarbeiter-Zeile, grüne Upgrade-Pfeile direkt in der Welt.
 Alle Grafiken sind eigene 3D-Modelle, direkt im Code gebaut – keine Bilddateien, keine gekauften Assets.
