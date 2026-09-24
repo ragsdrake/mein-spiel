@@ -24,7 +24,7 @@ export default function DevProbe() {
     window.__tapTargets = () => {
       const pts = [];
       for (const g of sim.guests.values()) {
-        if (g.bubble === 'checkin' || g.bubble === 'drink') pts.push(toScreen(g.pos[0], 0.9, g.pos[1]));
+        if (g.tip || g.bubble === 'checkin' || g.bubble === 'drink') pts.push(toScreen(g.pos[0], 0.9, g.pos[1]));
       }
       sim.roomDirty.forEach((d, r) => {
         if (!d) return;
@@ -36,9 +36,10 @@ export default function DevProbe() {
       return pts;
     };
     window.__debugState = () => {
-      const { coins, gems, totalEarned, rooms, barLevel, staff } = useHotel.getState();
+      const { coins, gems, activeHotel, hotels, stats } = useHotel.getState();
+      const { totalEarned, rooms, barLevel, staff, attractions } = hotels[activeHotel];
       return {
-        coins, gems, totalEarned, rooms, barLevel, staff,
+        activeHotel, coins, gems, totalEarned, rooms, barLevel, staff, attractions, stats,
         guests: [...sim.guests.values()].map(g => `${g.type}:${g.state}`),
         dirty: sim.roomDirty,
       };

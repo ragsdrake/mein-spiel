@@ -1,28 +1,31 @@
 # 👻 Spukhotel – Roadmap
 
 ## ✅ Version 0.1 – Spielbarer Kern
-- [x] Isometrisches 3D-Hotel in Low-Poly-Optik (three.js / react-three-fiber)
-- [x] Gäste-Kreislauf: Ankunft → Check-in → Gruft → Bar → Bezahlen → Abreise
-- [x] Tipp-Aufgaben: Einchecken, Drinks servieren, Ektoplasma putzen
-- [x] Personal als Automatisierung (Skelett, Zombie, Hexe)
-- [x] 6 Grüfte mit 10 Ausbaustufen (sichtbare Einrichtung je Stufe)
-- [x] Hotelsterne → 6 Geistertypen mit eigenem Aussehen
-- [x] Kristalle, „Geisterstunde ×2“-Boost, Offline-Einnahmen, Nachtbilanz
-- [x] Automatisches Speichern
+- [x] Isometrisches 3D-Hotel (three.js / react-three-fiber)
+- [x] Gäste-Kreislauf: Ankunft → Check-in → Zimmer → Bar → Bezahlen → Abreise
+- [x] Tipp-Aufgaben, Personal als Automatisierung, Sterne, Kristalle, Boost, Offline-Einnahmen
 
-## 🔜 Version 0.2 – Mehr Leben
-- [ ] Soundeffekte & Gruselmusik (expo-audio), Haptik beim Antippen
-- [ ] Wünsche der Gäste (z. B. „Kettenrasseln-Weckdienst“, „Kerzenlicht-Dinner“)
-- [ ] Personal-Level (schneller putzen / servieren)
-- [ ] Zahlen über Figuren (+Münzen) direkt in 3D
+## ✅ Version 0.2 – Hotel-Imperium & Grafik-Upgrade
+- [x] 4 Hotels: Nachtruh, Burg Dracula, Pharaonengrab, Yeti-Eispalast – je eigene Welt,
+      6 Gasttypen, eigenes Personal, Betten, Bar und Architektur
+- [x] Nebenbei-Einnahmen nicht besuchter Hotels, Reisen mit Titelkarte
+- [x] Attraktionen im Garten (3 pro Hotel, 3 Stufen), Personal-Stufen, Trinkgelder, Aufträge,
+      Schatztruhe
+- [x] Prozedurale Texturen, Bloom, ACES-Tone-Mapping, Vignette, SMAA, weiche Schatten,
+      flackerndes Kerzenlicht, Rim-Glow, Partikel, Nebel, Nordlicht, Grafik-Stufen
+- [x] Spielstände aus 0.1 werden automatisch übernommen
 
-## 🏰 Version 0.3 – Ausbau
-- [ ] Obergeschoss über die Treppe (neue Grüfte, Turm-Suite)
-- [ ] Spukgarten: Kürbisbeet und Irrlichter als zweite Einnahmequelle
-- [ ] Besondere Event-Gäste (Halloween-Nacht, Vollmond)
-- [ ] Prestige: Hotel „ins Jenseits verkaufen“ für dauerhafte Boni
+## 🔜 Version 0.3 – Mehr Leben
+- [ ] Soundeffekte & Musik je Hotel (expo-audio), Haptik beim Antippen
+- [ ] Gästewünsche (z. B. „Weckdienst mit Kettenrasseln“) für Extra-Belohnungen
+- [ ] Zahlen über Figuren direkt in 3D (+Münzen)
+- [ ] Obergeschoss über die Treppe (weitere Zimmer)
+
+## 🏰 Version 0.4 – Langzeitmotivation
+- [ ] Prestige: Hotelkette „ins Jenseits verkaufen“ für dauerhafte Boni
+- [ ] Events (Halloween-Nacht, Vollmond, Sonnenfinsternis)
+- [ ] Weitere Hotels (z. B. Frankensteins Sanatorium, Unterwasser-Geisterschiff)
 
 ## 📱 Release
 - [ ] App-Icon & Splash im Spukhotel-Stil
-- [ ] Tutorial mit Pfeilen statt Hinweisbox
-- [ ] Performance-Test auf älteren Android-Geräten (ggf. Schatten nativ aktivieren)
+- [ ] Performance-Test auf echten Android/iOS-Geräten (Stufen „Hoch“/„Ultra“ nativ prüfen)

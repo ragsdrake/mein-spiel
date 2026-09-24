@@ -1,7 +1,8 @@
 /**
  * game/sim.js
- * Real-time hotel simulation: ghosts arrive, check in, sleep in their coffin,
- * maybe visit the bar, pay and float away. Staff automate the tap-jobs.
+ * Real-time simulation of the hotel you are looking at: guests arrive, check
+ * in, sleep, maybe visit the bar, pay (sometimes with a tip) and leave.
+ * Staff automate the tap-jobs; other hotels earn passively via the store.
  *
  * Positions change every frame, so they live in plain mutable objects that the
  * 3D scene reads inside useFrame. Only structural changes (a guest appears or
@@ -11,11 +12,12 @@
 
 import { create } from 'zustand';
 import {
-  BAR_VISIT_CHANCE, CLEAN_SECONDS_TAP, CLEAN_SECONDS_ZOMBIE, DRINK_SECONDS, GHOST_SPEED,
-  GUEST_TYPES, MAX_QUEUE, NIGHT_LENGTH_MIN, NIGHT_START_MIN, P, ROOMS, SERVE_SECONDS_WITCH,
-  STAY_SECONDS, ZOMBIE_SPEED, autoCheckinSeconds, barStools, drinkPrice, getGuestType,
-  roomPrice, spawnInterval, starsFor,
+  BAR_VISIT_CHANCE, CLEAN_SECONDS_STAFF, CLEAN_SECONDS_TAP, DRINK_SECONDS, GHOST_SPEED,
+  MAX_QUEUE, NIGHT_LENGTH_MIN, NIGHT_START_MIN, P, ROOMS, SERVE_SECONDS_STAFF, STAY_SECONDS,
+  TIP_MULT, TIP_SECONDS, ZOMBIE_SPEED, autoCheckinSeconds, barStools, drinkPrice, roomPrice,
+  spawnInterval, staffSpeed, starsFor,
 } from './config';
+import { getGuestDef, getHotel } from './hotels';
 import useHotel from './store';
 
 export const useSim = create(() => ({
@@ -28,7 +30,10 @@ export const useSim = create(() => ({
   nightSummary: null,
 }));
 
+const freshCleaner = () => ({ pos: [...P.cleanerIdle], path: [], task: null, timer: 0, facing: 0, working: false });
+
 export const sim = {
+  hotelId:    null,
   guests:     new Map(),
   fx:         new Map(),
   queue:      [],
@@ -36,8 +41,8 @@ export const sim = {
   roomDirty:  ROOMS.map(() => false),
   roomClean:  ROOMS.map(() => 0),     // tap-clean countdown
   stools:     P.stools.map(() => null),
-  zombie:     { pos: [...P.zombieIdle], path: [], task: null, timer: 0, facing: 0, working: false },
-  witch:      { serving: null, timer: 0 },
+  cleaner:    freshCleaner(),
+  barkeeper:  { serving: null },
   spawnTimer: 1.5,
   clock:      0,
   nextId:     1,
@@ -58,6 +63,23 @@ function syncRooms() {
     dirty:    [...sim.roomDirty],
     occupied: sim.roomOcc.map(Boolean),
   });
+}
+
+/** Clear everything when the player switches to another hotel. */
+function resetFor(hotelId) {
+  sim.hotelId = hotelId;
+  sim.guests.clear();
+  sim.fx.clear();
+  sim.queue = [];
+  sim.roomOcc = ROOMS.map(() => null);
+  sim.roomDirty = ROOMS.map(() => false);
+  sim.roomClean = ROOMS.map(() => 0);
+  sim.stools = P.stools.map(() => null);
+  sim.cleaner = freshCleaner();
+  sim.barkeeper = { serving: null };
+  sim.spawnTimer = 1;
+  syncLists();
+  syncRooms();
 }
 
 /** Move `e.pos` along `e.path`; returns true once the path is used up. */
@@ -82,9 +104,9 @@ function walk(e, dt, speed) {
   return e.path.length === 0;
 }
 
-function pickGuestType() {
-  const stars = starsFor(useHotel.getState().totalEarned);
-  const pool = GUEST_TYPES.filter(t => t.star <= stars);
+function pickGuestType(def, hs) {
+  const stars = starsFor(hs.totalEarned, def.pm);
+  const pool = def.guests.filter(t => t.star <= stars);
   const total = pool.reduce((s, _, i) => s + i + 1, 0);
   let r = Math.random() * total;
   for (let i = 0; i < pool.length; i++) {
@@ -94,15 +116,21 @@ function pickGuestType() {
   return pool[pool.length - 1].id;
 }
 
-function addFx(pos, amount) {
+function addFx(pos, amount, kind = 'coin') {
   const id = sim.nextId++;
-  sim.fx.set(id, { id, pos: [pos[0], pos[1]], t: 0, amount });
+  sim.fx.set(id, { id, pos: [pos[0], pos[1]], t: 0, amount, kind });
   useSim.setState({ lastGain: { amount, at: Date.now(), id } });
 }
 
-function pay(g, amount) {
-  const gain = useHotel.getState().earn(amount * getGuestType(g.type).mult);
+/** Pay out, maybe with a tip bubble the player can tap for extra coins. */
+function pay(g, amount, def) {
+  const store = useHotel.getState();
+  const base = amount * getGuestDef(def, g.type).mult;
+  const gain = store.earn(base);
   addFx(g.pos, gain);
+  if (!g.tip && Math.random() < store.tipChance()) {
+    g.tip = { amount: base * TIP_MULT, timer: TIP_SECONDS };
+  }
 }
 
 // ─── paths ───────────────────────────────────────────────────────────────────
@@ -143,16 +171,15 @@ function refreshQueue() {
 }
 
 // ─── guest lifecycle ─────────────────────────────────────────────────────────
-function trySpawn() {
-  const h = useHotel.getState();
+function trySpawn(def, hs) {
   if (sim.queue.length >= MAX_QUEUE) return;
-  const room = h.rooms.findIndex((lvl, i) => lvl > 0 && !sim.roomOcc[i] && !sim.roomDirty[i]);
+  const room = hs.rooms.findIndex((lvl, i) => lvl > 0 && !sim.roomOcc[i] && !sim.roomDirty[i]);
   if (room < 0) return;
 
   const id = sim.nextId++;
   const g = {
     id,
-    type:    pickGuestType(),
+    type:    pickGuestType(def, hs),
     pos:     [...P.spawn],
     path:    [],
     facing:  Math.PI,
@@ -161,6 +188,7 @@ function trySpawn() {
     room,
     stool:   null,
     bubble:  null,
+    tip:     null,
     inside:  false,
     alpha:   0,
     phase:   Math.random() * Math.PI * 2,
@@ -177,12 +205,26 @@ function leaveHotel(g, path) {
   g.state = 'leave';
   g.bubble = null;
   g.path = path;
+  useHotel.getState().stat('guests');
 }
 
-function updateGuest(g, dt, h) {
-  // fade in after spawning, fade out on the way out through the garden
+function finishCheckin(g) {
+  sim.queue.shift();
+  refreshQueue();
+  g.state = 'toRoom';
+  g.path = pathDeskToRoom(g.room);
+  useHotel.getState().stat('checkins');
+}
+
+function updateGuest(g, dt, def, hs) {
+  // pop in after spawning, shrink away on the way out through the garden
   const target = g.state === 'leave' && g.pos[1] > 14 ? 0 : 1;
-  g.alpha += Math.sign(target - g.alpha) * Math.min(Math.abs(target - g.alpha), dt * 2);
+  g.alpha += Math.sign(target - g.alpha) * Math.min(Math.abs(target - g.alpha), dt * 2.5);
+
+  if (g.tip) {
+    g.tip.timer -= dt;
+    if (g.tip.timer <= 0) g.tip = null;
+  }
 
   switch (g.state) {
     case 'queue': {
@@ -190,21 +232,16 @@ function updateGuest(g, dt, h) {
       if (g.pos[1] < 12.3) g.inside = true;
       if (arrived && sim.queue[0] === g.id) {
         g.state = 'desk';
-        g.timer = autoCheckinSeconds(h.receptionLevel);
-        g.bubble = h.staff.skelett ? null : 'checkin';
+        g.timer = autoCheckinSeconds(hs.receptionLevel) / staffSpeed(hs.staff.reception);
+        g.bubble = hs.staff.reception ? null : 'checkin';
       }
       break;
     }
     case 'desk': {
-      if (g.bubble === 'checkin' && !h.staff.skelett) break;   // waits for a tap
+      if (g.bubble === 'checkin' && !hs.staff.reception) break;   // waits for a tap
       g.bubble = null;
       g.timer -= dt;
-      if (g.timer <= 0) {
-        sim.queue.shift();
-        refreshQueue();
-        g.state = 'toRoom';
-        g.path = pathDeskToRoom(g.room);
-      }
+      if (g.timer <= 0) finishCheckin(g);
       break;
     }
     case 'toRoom':
@@ -218,13 +255,14 @@ function updateGuest(g, dt, h) {
     case 'sleep': {
       g.timer -= dt;
       if (g.timer > 0) break;
-      pay(g, roomPrice(h.rooms[g.room] || 1));
+      const store = useHotel.getState();
+      pay(g, roomPrice(hs.rooms[g.room] || 1, def.pm) * (1 + store.bonus('rooms')), def);
       const r = g.room;
       sim.roomOcc[r] = null;
       sim.roomDirty[r] = true;
       syncRooms();
 
-      const stools = h.barLevel > 0 ? barStools(h.barLevel) : 0;
+      const stools = hs.barLevel > 0 ? barStools(hs.barLevel) : 0;
       const free = sim.stools.findIndex((o, i) => i < stools && !o);
       if (free >= 0 && Math.random() < BAR_VISIT_CHANCE) {
         sim.stools[free] = g.id;
@@ -245,7 +283,7 @@ function updateGuest(g, dt, h) {
       }
       break;
     case 'waitDrink':
-      // either the witch serves (handled in updateWitch) or the player taps
+      // either the barkeeper serves (updateBarkeeper) or the player taps
       break;
     case 'serve':
       g.timer -= dt;
@@ -258,7 +296,9 @@ function updateGuest(g, dt, h) {
     case 'drink':
       g.timer -= dt;
       if (g.timer <= 0) {
-        pay(g, drinkPrice(h.barLevel));
+        const store = useHotel.getState();
+        pay(g, drinkPrice(hs.barLevel, def.pm) * (1 + store.bonus('bar')), def);
+        store.stat('drinks');
         sim.stools[g.stool] = null;
         leaveHotel(g, pathStoolToExit(g.stool));
       }
@@ -275,66 +315,72 @@ function updateGuest(g, dt, h) {
 }
 
 // ─── staff ───────────────────────────────────────────────────────────────────
-function updateWitch(dt, h) {
-  if (!h.staff.hexe) return;
-  const w = sim.witch;
-  if (w.serving == null) {
+function updateBarkeeper(hs) {
+  if (!hs.staff.bar) return;
+  const b = sim.barkeeper;
+  if (b.serving == null) {
     const next = [...sim.guests.values()].find(g => g.state === 'waitDrink');
     if (next) {
-      w.serving = next.id;
+      b.serving = next.id;
       next.state = 'serve';
-      next.timer = SERVE_SECONDS_WITCH;
+      next.timer = SERVE_SECONDS_STAFF / staffSpeed(hs.staff.bar);
       next.bubble = null;
     }
-  } else if (!sim.guests.has(w.serving) || sim.guests.get(w.serving).state !== 'serve') {
-    w.serving = null;
+  } else if (!sim.guests.has(b.serving) || sim.guests.get(b.serving).state !== 'serve') {
+    b.serving = null;
   }
 }
 
-function zombiePathTo(r) {
+function cleanerPathTo(r) {
   const room = ROOMS[r];
   const via = isLeftRoom(r) ? [[4.4, room.door[1]]] : [[4.4, 3.9], room.door];
   const bed = room.center;
   const spot = isLeftRoom(r) ? [bed[0] + 0.9, bed[1] + 0.6] : [bed[0] + 0.6, bed[1] + 0.9];
-  return [[4.4, P.zombieIdle[1]], ...via, spot];
+  return [[4.4, P.cleanerIdle[1]], ...via, spot];
 }
 
-function updateZombie(dt, h) {
-  if (!h.staff.zombie) return;
-  const z = sim.zombie;
-  if (z.task == null) {
-    const r = sim.roomDirty.findIndex(Boolean);
+function finishClean(r) {
+  sim.roomDirty[r] = false;
+  syncRooms();
+  useHotel.getState().stat('cleans');
+}
+
+function updateCleaner(dt, hs) {
+  if (!hs.staff.cleaner) return;
+  const c = sim.cleaner;
+  const speed = ZOMBIE_SPEED * staffSpeed(hs.staff.cleaner);
+  if (c.task == null) {
+    const r = sim.roomDirty.findIndex((d, i) => d && sim.roomClean[i] <= 0);
     if (r >= 0) {
-      z.task = r;
-      z.working = false;
-      z.path = zombiePathTo(r);
-    } else if (z.path.length) {
-      walk(z, dt, ZOMBIE_SPEED);
+      c.task = r;
+      c.working = false;
+      c.path = cleanerPathTo(r);
+    } else if (c.path.length) {
+      walk(c, dt, speed);
     }
     return;
   }
-  if (!sim.roomDirty[z.task]) {            // player was faster
-    z.task = null;
-    z.path = [...zombiePathTo(0).slice(0, 1), P.zombieIdle];
+  if (!sim.roomDirty[c.task]) {            // player was faster
+    c.task = null;
+    c.path = [[4.4, P.cleanerIdle[1]], P.cleanerIdle];
     return;
   }
-  if (!z.working) {
-    if (walk(z, dt, ZOMBIE_SPEED)) {
-      z.working = true;
-      z.timer = CLEAN_SECONDS_ZOMBIE;
+  if (!c.working) {
+    if (walk(c, dt, speed)) {
+      c.working = true;
+      c.timer = CLEAN_SECONDS_STAFF / staffSpeed(hs.staff.cleaner);
     }
     return;
   }
-  z.timer -= dt;
-  if (z.timer <= 0) {
-    sim.roomDirty[z.task] = false;
-    syncRooms();
-    const back = isLeftRoom(z.task)
-      ? [[4.4, ROOMS[z.task].door[1]]]
-      : [ROOMS[z.task].door, [4.4, 3.9]];
-    z.task = null;
-    z.working = false;
-    z.path = [...back, [4.4, P.zombieIdle[1]], P.zombieIdle];
+  c.timer -= dt;
+  if (c.timer <= 0) {
+    finishClean(c.task);
+    const back = isLeftRoom(c.task)
+      ? [[4.4, ROOMS[c.task].door[1]]]
+      : [ROOMS[c.task].door, [4.4, 3.9]];
+    c.task = null;
+    c.working = false;
+    c.path = [...back, [4.4, P.cleanerIdle[1]], P.cleanerIdle];
   }
 }
 
@@ -350,36 +396,38 @@ export function step(rawDt) {
 }
 
 function stepOnce(dt) {
-  const h = useHotel.getState();
+  const store = useHotel.getState();
+  if (sim.hotelId !== store.activeHotel) resetFor(store.activeHotel);
+  const def = getHotel(store.activeHotel);
+  const hs = store.hotels[store.activeHotel];
 
   // night clock
   sim.clock += dt;
   const minute = NIGHT_START_MIN + Math.floor(sim.clock) % NIGHT_LENGTH_MIN;
   if (minute !== useSim.getState().minute) {
     if (minute === NIGHT_START_MIN && sim.clock > 1) {
-      useSim.setState({ nightSummary: { amount: h.nightEarned, at: Date.now() } });
-      h.resetNight();
+      useSim.setState({ nightSummary: { amount: store.nightEarned, at: Date.now() } });
+      store.resetNight();
     }
     useSim.setState({ minute });
   }
 
+  store.passiveTick(dt);
+
   sim.spawnTimer -= dt;
   if (sim.spawnTimer <= 0) {
-    sim.spawnTimer = spawnInterval(h.receptionLevel);
-    trySpawn();
+    sim.spawnTimer = spawnInterval(hs.receptionLevel) * (1 - Math.min(0.5, store.bonus('spawn')));
+    trySpawn(def, hs);
   }
 
-  for (const g of [...sim.guests.values()]) updateGuest(g, dt, h);
-  updateWitch(dt, h);
-  updateZombie(dt, h);
+  for (const g of [...sim.guests.values()]) updateGuest(g, dt, def, hs);
+  updateBarkeeper(hs);
+  updateCleaner(dt, hs);
 
   for (let r = 0; r < sim.roomClean.length; r++) {
     if (sim.roomClean[r] > 0) {
       sim.roomClean[r] -= dt;
-      if (sim.roomClean[r] <= 0) {
-        sim.roomDirty[r] = false;
-        syncRooms();
-      }
+      if (sim.roomClean[r] <= 0) finishClean(r);
     }
   }
 
@@ -391,10 +439,18 @@ function stepOnce(dt) {
   if (fxChanged) syncLists();
 }
 
-/** Player taps a ghost with a speech bubble. */
+/** Player taps a guest: collect a tip first, else handle its speech bubble. */
 export function tapGuest(id) {
   const g = sim.guests.get(id);
   if (!g) return false;
+  if (g.tip) {
+    const store = useHotel.getState();
+    const gain = store.earn(g.tip.amount);
+    store.stat('tips');
+    addFx(g.pos, gain, 'tip');
+    g.tip = null;
+    return true;
+  }
   if (g.state === 'desk' && g.bubble === 'checkin') {
     g.bubble = null;
     g.timer = 0.35;
@@ -409,7 +465,7 @@ export function tapGuest(id) {
   return false;
 }
 
-/** Player taps an ectoplasm puddle. */
+/** Player taps a dirty room. */
 export function tapRoom(r) {
   if (!sim.roomDirty[r] || sim.roomClean[r] > 0) return false;
   sim.roomClean[r] = CLEAN_SECONDS_TAP;

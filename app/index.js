@@ -9,7 +9,9 @@ import { AppState, PanResponder, Platform, StyleSheet, View, useWindowDimensions
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomBar from '../components/hud/BottomBar';
 import BuildSheet from '../components/hud/BuildSheet';
-import { NightSummaryToast, OfflinePopup, StarUpPopup, TutorialHint } from '../components/hud/Popups';
+import {
+  HotelTransition, NightSummaryToast, OfflinePopup, StarUpPopup, TutorialHint,
+} from '../components/hud/Popups';
 import TopBar from '../components/hud/TopBar';
 import HotelScene from '../components/scene/HotelScene';
 import { panBy, zoomBy } from '../game/camera';
@@ -97,6 +99,7 @@ export default function GameScreen() {
       <TutorialHint />
       <NightSummaryToast />
       <BuildSheet />
+      <HotelTransition />
       <StarUpPopup />
       <OfflinePopup />
     </View>
@@ -104,7 +107,7 @@ export default function GameScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#171230' },
+  root: { flex: 1, backgroundColor: '#0c0818' },
   hud:  { ...StyleSheet.absoluteFillObject, paddingTop: 6 },
   flex: { flex: 1 },
 });
