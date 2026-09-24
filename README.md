@@ -1,50 +1,65 @@
-# Welcome to your Expo app 👋
+# 👻 Spukhotel
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<img src="docs/screenshot.png" width="320" alt="Spukhotel Screenshot" />
 
-## Get started
+Ein gemütliches 3D-Idle-Game: Du führst ein Hotel **für Geister**. Gespenster schweben vom
+Friedhof herein, checken an der Rezeption ein, schlummern in ihrer Gruft, gönnen sich an der
+Nebeltee-Bar einen Drink und zahlen dafür. Später stellst du Personal ein
+(Skelett, Zombie, Hexe), das die Arbeit übernimmt – dein Hotel verdient dann auch, während du weg bist.
 
-1. Install dependencies
+Alle Grafiken sind eigene Low-Poly-3D-Modelle, direkt im Code aus three.js-Grundformen gebaut
+(keine Bilddateien, keine gekauften Assets).
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Starten
 
 ```bash
-npm run reset-project
+npm install
+npx expo start          # QR-Code mit Expo Go scannen (Android/iOS)
+npx expo start --web    # im Browser spielen
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Spielablauf
 
-## Learn more
+| Was | Wie |
+| --- | --- |
+| Geist mit **!** an der Rezeption | antippen → Check-in |
+| Geist mit **Becher** an der Bar | antippen → Drink servieren |
+| **Grüner Schleim** in einer Gruft | antippen → putzen (erst dann ist die Gruft wieder frei) |
+| Kamera | ziehen = umsehen, zwei Finger / Mausrad = zoomen |
+| **Zimmer** | neue Grüfte öffnen, bestehende ausbauen (mehr Münzen, schönere Einrichtung) |
+| **Bar** | Nebeltee-Bar eröffnen/ausbauen, Rezeption ausbauen (schnellere Gäste) |
+| **Personal** | Skelett = Auto-Check-in · Zombie = Auto-Putzen · Hexe = Auto-Bar |
+| **Gäste** | Hotelsterne schalten neue, zahlungskräftigere Geister frei (bis zur Geisterkönigin ×12) |
+| **Shop** | Kristalle gegen „Geisterstunde ×2“ tauschen, Spielstand zurücksetzen |
 
-To learn more about developing your project with Expo, look at the following resources:
+Offline-Einnahmen (bis 8 h) gibt es beim nächsten Start, eine Nacht dauert 10 Minuten (20:00–06:00).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Projektstruktur
 
-## Join the community
+```
+app/
+  _layout.js            Schrift laden, Splash-Screen
+  index.js              Spielbildschirm: 3D-Szene + HUD + Kamera-Gesten
+game/
+  config.js             Balancing, Geistertypen, Grundriss/Wegpunkte
+  store.js              Wirtschaft (Zustand + AsyncStorage, speichert automatisch)
+  sim.js                Echtzeit-Simulation der Gäste & des Personals
+  camera.js             Kamera-Position/Zoom für Gesten
+components/scene/       three.js / react-three-fiber
+  HotelScene.js         Canvas, Licht, isometrische Kamera
+  Hotel.js              Gebäude, Grüfte, Bar, Rezeption, Friedhofsgarten
+  Characters.js         Geister (6 Typen), Skelett, Hexe, Zombie
+  Actors.js             bewegte Figuren, Sprechblasen, Münz-Effekte
+  primitives.js         Low-Poly-Bausteine + Material-Cache
+components/hud/         2D-Oberfläche (Top-Leiste, Menüs, Popups)
+```
 
-Join our community of developers creating universal apps.
+Neue Inhalte hinzufügen:
+- **Geistertyp** → Eintrag in `GUEST_TYPES` (`game/config.js`) + Aussehen in `Ghost` (`Characters.js`)
+- **Balancing** → Preise/Kosten-Formeln in `game/config.js`
+- **Deko** → neue Low-Poly-Objekte in `Hotel.js` mit `Box`, `Cyl`, `Cone`, `Ball`, `Rock`
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Technik
+
+Expo SDK 54 · React Native 0.81 · three.js 0.180 · @react-three/fiber 9 (nativ über `expo-gl`) ·
+Zustand 5 · Reanimated 4. Schatten sind nur im Web aktiv (Performance auf Handys).

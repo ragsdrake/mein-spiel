@@ -1,39 +1,30 @@
 /**
- * app/_layout.js
- * Root layout — starts the game loop, sets dark background,
- * and configures the Stack navigator.
+ * Root layout — loads the display font, keeps the splash screen up until it
+ * is ready, and hosts the single game screen.
  */
 
+import { LilitaOne_400Regular, useFonts } from '@expo-google-fonts/lilita-one';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import useGameLoop from '../hooks/useGameLoop';
-import { Colors } from '../constants/theme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  useGameLoop();   // start the 1-second resource tick
+  const [loaded, error] = useFonts({ LilitaOne_400Regular });
+
+  useEffect(() => {
+    if (loaded || error) SplashScreen.hideAsync();
+  }, [loaded, error]);
+
+  if (!loaded && !error) return null;
 
   return (
-    <View style={styles.root}>
-      <StatusBar style="light" backgroundColor={Colors.void} />
-      <Stack
-        screenOptions={{
-          headerShown:      false,
-          contentStyle:     { backgroundColor: Colors.bg },
-          animation:        'fade',
-        }}
-      >
-        <Stack.Screen name="(tabs)"  options={{ headerShown: false }} />
-        <Stack.Screen name="world/[id]" options={{ headerShown: false, animation: 'slide_from_right' }} />
-      </Stack>
-    </View>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#171230' }}>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#171230' } }} />
+    </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex:            1,
-    backgroundColor: Colors.void,
-  },
-});
