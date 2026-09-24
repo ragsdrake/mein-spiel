@@ -7,11 +7,14 @@ import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, ZoomIn } from 'react-native-reanimated';
+import Animated, {
+  BounceIn, Easing, FadeIn, FadeInDown, FadeOut, ZoomIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming,
+} from 'react-native-reanimated';
 import { GEMS_PER_STAR } from '../../game/config';
 import { fmt, fmtDuration } from '../../game/format';
 import { getHotel } from '../../game/hotels';
 import { AD_PLACEMENTS, finishAd, showRewardedAd } from '../../game/ads';
+import { intro } from '../../game/fx';
 import { dismissNightSummary, useSim } from '../../game/sim';
 import useUi from '../../game/ui';
 import useHotel from '../../game/store';
@@ -19,15 +22,32 @@ import GameButton from './GameButton';
 import { C, GRAD } from './theme';
 import Txt from './Txt';
 
-function Dialog({ icon, iconColor, title, children, actions }) {
+/** Slowly turning sunburst behind celebration dialogs. */
+function Rays({ color = 'rgba(255, 214, 90, 0.13)' }) {
+  const spin = useSharedValue(0);
+  useEffect(() => {
+    spin.value = withRepeat(withTiming(360, { duration: 9000, easing: Easing.linear }), -1);
+  }, [spin]);
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${spin.value}deg` }] }));
+  return (
+    <Animated.View pointerEvents="none" style={[styles.rays, style]}>
+      {Array.from({ length: 12 }, (_, i) => (
+        <View key={i} style={[styles.ray, { backgroundColor: color, transform: [{ rotate: `${i * 15}deg` }] }]} />
+      ))}
+    </Animated.View>
+  );
+}
+
+function Dialog({ icon, iconColor, title, children, actions, celebrate = false }) {
   return (
     <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.backdrop}>
-      <Animated.View entering={ZoomIn.springify()} style={styles.card}>
+      {celebrate && <Rays />}
+      <Animated.View entering={ZoomIn.springify().damping(10)} style={styles.card}>
         <LinearGradient colors={GRAD.panel} style={[StyleSheet.absoluteFill, { borderRadius: 22 }]} />
-        <View style={styles.badge}>
+        <Animated.View entering={BounceIn.delay(250)} style={styles.badge}>
           <LinearGradient colors={GRAD.card} style={[StyleSheet.absoluteFill, { borderRadius: 34 }]} />
           <Icon name={icon} size={42} color={iconColor} />
-        </View>
+        </Animated.View>
         <Txt size={24} style={styles.center}>{title}</Txt>
         <View style={styles.body}>{children}</View>
         <View style={styles.actions}>{actions}</View>
@@ -122,6 +142,7 @@ export function StarUpPopup() {
     <Dialog
       icon="star"
       iconColor={C.gold}
+      celebrate
       title={`${def.short}: ${starUp.stars} ★`}
       actions={<Btn label="Juhu!" onPress={dismiss} />}
     >
@@ -134,10 +155,18 @@ export function StarUpPopup() {
       {starUp.stars === 3 && def.id !== 'eispalast' && (
         <Txt size={14} color={C.green} style={styles.center}>Ein neues Hotel kann freigeschaltet werden!</Txt>
       )}
-      <View style={styles.amount}>
+      <View style={styles.starRow}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <Animated.View key={n} entering={ZoomIn.delay(300 + n * 120).springify().damping(8)}>
+            <Icon name={n <= starUp.stars ? 'star' : 'star-outline'} size={n === starUp.stars ? 40 : 28}
+              color={n <= starUp.stars ? C.gold : C.muted} />
+          </Animated.View>
+        ))}
+      </View>
+      <Animated.View entering={FadeInDown.delay(1000)} style={styles.amount}>
         <Icon name="diamond-stone" size={24} color={C.purple} />
         <Txt size={22} color={C.purple}>+{GEMS_PER_STAR}</Txt>
-      </View>
+      </Animated.View>
     </Dialog>
   );
 }
@@ -167,20 +196,30 @@ export function HotelTransition() {
   const [show, setShow] = useState(null);
   useEffect(() => {
     if (first.current) { first.current = false; return undefined; }
+    // hold the camera swoop + build-up until the card starts to fade
+    intro.hold = true;
     setShow(active);
-    const t = setTimeout(() => setShow(null), 2200);
-    return () => clearTimeout(t);
+    const open = setTimeout(() => { intro.hold = false; }, 1500);
+    const t = setTimeout(() => setShow(null), 2000);
+    return () => { clearTimeout(open); clearTimeout(t); intro.hold = false; };
   }, [active]);
   if (!show) return null;
   const def = getHotel(show);
   return (
     <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(600)} style={styles.transition} pointerEvents="none">
       <LinearGradient colors={[def.palette.bg, def.palette.skyBottom, def.palette.bg]} style={StyleSheet.absoluteFill} />
-      <Animated.View entering={FadeInDown.duration(350)} style={styles.transitionInner}>
-        <Icon name={def.icon} size={64} color={def.palette.window} />
-        <Txt size={34} style={styles.center}>{def.name}</Txt>
-        <Txt size={16} color="#e0d8f4" style={styles.center}>{def.tagline}</Txt>
-      </Animated.View>
+      <Rays color="rgba(255, 255, 255, 0.08)" />
+      <View style={styles.transitionInner}>
+        <Animated.View entering={BounceIn.duration(700)}>
+          <Icon name={def.icon} size={72} color={def.palette.window} />
+        </Animated.View>
+        <Animated.View entering={ZoomIn.delay(200).springify().damping(9)}>
+          <Txt size={34} style={styles.center}>{def.name}</Txt>
+        </Animated.View>
+        <Animated.View entering={FadeInDown.delay(450)}>
+          <Txt size={16} color="#e0d8f4" style={styles.center}>{def.tagline}</Txt>
+        </Animated.View>
+      </View>
     </Animated.View>
   );
 }
@@ -220,6 +259,9 @@ const styles = StyleSheet.create({
     borderWidth: 3, borderColor: C.border, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   center: { textAlign: 'center' },
+  rays: { position: 'absolute', width: 900, height: 900, alignItems: 'center', justifyContent: 'center' },
+  ray: { position: 'absolute', width: 70, height: 900 },
+  starRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   body: { marginVertical: 14, gap: 6, alignItems: 'center' },
   amount: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10 },

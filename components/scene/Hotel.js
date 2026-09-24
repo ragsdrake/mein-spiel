@@ -14,10 +14,12 @@ import {
 import { sim, tapRoom, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
+import { Bump, Construction, PopAt, PopIn, useBuildPhase } from './anim';
 import { CleanBadge, UpgradeBadge } from './Badge';
 import Bed from './Beds';
 import EXTERIORS from './exteriors';
 import { ROOM_COLORS, RoomInterior } from './RoomFurniture';
+import Grounds from './exteriors/Grounds';
 import Street from './Street';
 import { Candelabra, Candle, Cobweb, GOLD, Padlock, Table, Torch, Window } from './Props';
 import { Ball, Blob, Box, Cyl, Halo, M, Rock } from './primitives';
@@ -75,25 +77,34 @@ function Room({ index }) {
   const [cx, cz] = def.center;
   const back = def.rot ? -1.6 : -1.5;
   const span = index === 0 ? [-2, 1.5] : [-1.5, 1.5];
+  const introDelay = 0.55 + index * 0.12;
+  const { building, delay } = useBuildPhase(level, def.center, introDelay);
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, def.rot, 0]}>
-      <RoomWalls index={index} def={def} doorX={L.doorX} back={back} span={span} locked={level === 0} />
-      {level === 0 ? (
-        <group>
+      <PopIn delay={introDelay - 0.2} rise>
+        <RoomWalls index={index} def={def} doorX={L.doorX} back={back} span={span} locked={level === 0} />
+      </PopIn>
+      {building ? (
+        <Construction />
+      ) : level === 0 ? (
+        <PopIn delay={introDelay}>
           <Box p={[-0.4, 0.3, -0.5]} s={[0.6, 0.6, 0.6]} r={[0, 0.3, 0]} mat={M('#7a5234', { tx: 'planks', bump: 1 })} />
           <Box p={[0.3, 0.25, -0.7]} s={[0.5, 0.5, 0.5]} r={[0, -0.2, 0]} mat={M('#6b462c', { tx: 'planks', bump: 1 })} />
           <Box p={[-0.2, 0.8, -0.6]} s={[0.4, 0.4, 0.4]} r={[0, 0.7, 0]} mat={M('#8a603f', { tx: 'planks', bump: 1 })} />
           <Cobweb p={[0.9, 1.1, -1.35]} r={[0, 0, Math.PI / 4]} />
           <Cobweb p={[-1.2, 1.2, -1.35]} r={[0, 0, -Math.PI / 5]} s={0.7} />
           {prevUnlocked && <Padlock p={[0, 1.5, 0]} onPress={open} />}
-        </group>
+        </PopIn>
       ) : (
         <group>
-          <group position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]}>
-            <Bed kind={theme.bed} level={level} />
+          <group key={level}>
+            <PopIn position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]} delay={delay} drop={0.8}>
+              <Bed kind={theme.bed} level={level} />
+            </PopIn>
+            <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back}
+              lowBack={def.side === 'right'} delay={delay + 0.15} />
           </group>
-          <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back} lowBack={def.side === 'right'} />
           {dirty && <Puddle index={index} p={L.clean} showHint={!hasCleaner} color={palette.slime} />}
           <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
           {affordable && !dirty && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
@@ -370,8 +381,12 @@ function Reception() {
   });
   const open = () => openUpgrade('reception');
   const wood = M(palette.wood, { tx: 'planks', rx: 1, ry: 2, bump: 1 });
+  const level = useHotel(s => s.hotels[s.activeHotel].receptionLevel);
+  useBuildPhase(level, [10, 9.6]);
   return (
-    <group>
+    <group position={[10, 0, 9.6]}>
+     <Bump trigger={level}>
+     <group position={[-10, 0, -9.6]}>
       <Box p={[10, 0.5, 9.6]} s={[0.8, 1.0, 2.6]} mat={wood} />
       <Box p={[10.42, 0.5, 9.6]} s={[0.04, 0.7, 2.2]} mat={M(palette.woodDark)} cast={false} />
       <Box p={[10.43, 0.5, 9.6]} s={[0.03, 0.1, 2.2]} mat={GOLD()} cast={false} />
@@ -391,6 +406,8 @@ function Reception() {
       <Halo p={[10.2, 0.04, 9.6]} size={3.5} color={palette.warm} opacity={0.18} />
       <TapArea p={[9.6, 0.6, 9.6]} s={[1.6, 1.2, 2.8]} onPress={open} />
       {affordable && <UpgradeMarker p={[10, 2.4, 9.6]} onPress={open} />}
+     </group>
+     </Bump>
     </group>
   );
 }
@@ -408,9 +425,14 @@ function Bar({ Ext }) {
   const stools = level > 0 ? barStools(level) : 0;
   const wood = M(palette.wood, { tx: 'planks', rx: 4, bump: 1 });
   const top = M(palette.trim, { rough: 0.3, metal: 0.1 });
+  const { building } = useBuildPhase(level, [7, 5.3]);
 
   return (
     <group>
+      {building && <group position={[7.2, 0, 5.1]}><Construction w={5.2} d={1.9} h={1.8} /></group>}
+      <group position={[7, 0, 5.3]}>
+      <Bump trigger={level}>
+      <group position={[-7, 0, -5.3]}>
       <Box p={[6.9, 0.5, 5.3]} s={[4.6, 1.0, 0.8]} mat={wood} />
       <Box p={[6.9, 0.5, 5.71]} s={[4.3, 0.12, 0.04]} mat={GOLD()} cast={false} />
       <Box p={[6.9, 1.05, 5.3]} s={[4.8, 0.1, 1.0]} mat={top} />
@@ -437,6 +459,9 @@ function Bar({ Ext }) {
         </group>
       )}
 
+      </group>
+      </Bump>
+      </group>
       <TapArea p={[7.2, 0.6, 5.1]} s={[5.2, 1.2, 1.4]} onPress={open} />
       {affordable && <UpgradeMarker p={[7.2, 2.2, 5.3]} onPress={open} />}
       {P.stools.slice(0, stools).map(([x, z]) => (
@@ -481,14 +506,25 @@ function Lounge({ Ext }) {
   );
 }
 
+function AttractionSlot({ A, level, spot }) {
+  const { building, delay } = useBuildPhase(level, spot, 1.6, 1800);
+  if (building) return <group position={[spot[0], -0.5, spot[1]]}><Construction w={2.6} d={2.6} h={2.4} /></group>;
+  if (level === 0) return null;
+  return (
+    <group position={[spot[0], -0.5, spot[1]]}>
+      <Bump trigger={level}>
+        <PopIn key={level === 1 ? 'new' : 'up'} delay={delay} drop={3}>
+          <A level={level} />
+        </PopIn>
+      </Bump>
+    </group>
+  );
+}
+
 function Attractions({ Ext, roomCount }) {
   const levels = useHotel(s => s.hotels[s.activeHotel].attractions);
   const spots = attractionSpots(roomCount);
-  return Ext.attractions.map((A, i) => (levels[i] > 0 ? (
-    <group key={i} position={[spots[i][0], -0.5, spots[i][1]]}>
-      <A level={levels[i]} />
-    </group>
-  ) : null));
+  return Ext.attractions.map((A, i) => <AttractionSlot key={i} A={A} level={levels[i]} spot={spots[i]} />);
 }
 
 export default function Hotel() {
@@ -498,13 +534,14 @@ export default function Hotel() {
   const depth = wingDepth(roomCount);
   return (
     <group>
-      <Shell Ext={Ext} depth={depth} />
-      {depth > 0 && <Wing depth={depth} />}
+      <PopIn rise dur={0.6}><Shell Ext={Ext} depth={depth} /></PopIn>
+      {depth > 0 && <PopIn rise delay={0.3} dur={0.6}><Wing depth={depth} /></PopIn>}
       {ROOMS.slice(0, roomCount).map((_, i) => <Room key={i} index={i} />)}
-      <Reception />
-      <Bar Ext={Ext} />
-      <Lounge Ext={Ext} />
+      <PopAt at={[10, 9.6]} delay={1.1} drop={1.5}><Reception /></PopAt>
+      <PopAt at={[7, 5.3]} delay={1.25} drop={1.5}><Bar Ext={Ext} /></PopAt>
+      <PopAt at={[6.5, 10]} delay={1.4}><Lounge Ext={Ext} /></PopAt>
       <Ext.Outside wing={depth} />
+      <Grounds wing={depth} />
       <Street />
       <Attractions Ext={Ext} roomCount={roomCount} />
     </group>

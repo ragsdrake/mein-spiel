@@ -9,17 +9,13 @@ import { useTheme } from '../theme';
 export function Ground() {
   const { palette } = useTheme();
   return (
-    <Box p={[8, -0.7, 10]} s={[64, 0.4, 56]} mat={M(palette.ground, { tx: palette.groundTex, rx: 24, ry: 21, bump: 1.5 })} cast={false} />
+    <Box p={[8, -0.7, 10]} s={[170, 0.4, 170]} mat={M(palette.ground, { tx: palette.groundTex, rx: 64, ry: 64, bump: 1.5 })} cast={false} />
   );
 }
 
-/** Stepping stones from the garden gate to the entrance. */
+/** The entrance path is part of the shared grounds now (Grounds.js). */
 export function GardenPath() {
-  const { palette } = useTheme();
-  return Array.from({ length: 12 }, (_, i) => (
-    <Cyl key={i} p={[12.9 + (rand(i + 7) - 0.5) * 0.8, -0.48, 12.9 + i * 0.6]} rt={0.35} h={0.06} seg={7}
-      r={[0, rand(i) * 3, 0]} mat={M(palette.path, { tx: 'stone', bump: 1.5 })} cast={false} />
-  ));
+  return null;
 }
 
 export function Gravestone({ p, r = 0, kind = 0, color = '#8e889a' }) {

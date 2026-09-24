@@ -12,6 +12,7 @@ import BuildSheet from '../components/hud/BuildSheet';
 import {
   AdOverlay, HotelTransition, NightSummaryToast, OfflinePopup, StarUpPopup, TutorialHint,
 } from '../components/hud/Popups';
+import IntroSplash from '../components/hud/Intro';
 import TopBar from '../components/hud/TopBar';
 import HotelScene from '../components/scene/HotelScene';
 import { panBy, zoomBy } from '../game/camera';
@@ -103,6 +104,7 @@ export default function GameScreen() {
       <StarUpPopup />
       <OfflinePopup />
       <AdOverlay />
+      <IntroSplash />
     </View>
   );
 }

@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 import { Vector3 } from 'three';
 import { ROOMS } from '../../game/config';
 import { cam } from '../../game/camera';
+import { intro } from '../../game/fx';
 import { sim } from '../../game/sim';
 import useHotel from '../../game/store';
 
@@ -36,6 +37,9 @@ export default function DevProbe() {
     };
     window.__project = (x, y, z) => toScreen(x, y, z);
     window.__cam = cam;
+    window.__store = useHotel;
+    window.__intro = intro;
+    window.__camPos = () => camera.position.toArray().map(v => Math.round(v * 10) / 10);
     window.__debugState = () => {
       const { coins, gems, activeHotel, hotels, stats } = useHotel.getState();
       const { totalEarned, rooms, barLevel, staff, attractions } = hotels[activeHotel];

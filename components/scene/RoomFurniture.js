@@ -5,6 +5,7 @@
  * Rooms fill up with level: each entry has the minimum room level it needs.
  */
 
+import { PopIn } from './anim';
 import { Candelabra, Candle, GOLD, Painting } from './Props';
 import { Ball, Box, Cyl, M, Rock } from './primitives';
 
@@ -247,25 +248,29 @@ const PLANS = [
 ];
 
 /** Furniture of one room for its layout, colours and level. */
-export function RoomInterior({ layout, index, level, pal, back = -1.5, lowBack = false }) {
+export function RoomInterior({ layout, index, level, pal, back = -1.5, lowBack = false, delay = 0 }) {
   const plan = PLANS[layout];
   const { accent } = ROOM_COLORS[index % ROOM_COLORS.length];
   const [rx, rz, rw, rd] = plan.rug;
   return (
     <group>
-      <group position={[rx, 0, rz]}><Rug color={accent} s={[rw, rd]} /></group>
+      <PopIn position={[rx, 0, rz]} delay={delay - 0.1} dur={0.35}><Rug color={accent} s={[rw, rd]} /></PopIn>
       {plan.items.map(([kind, x, z, r, min], i) => {
         if (level < min) return null;
         const C = PIECES[kind];
         return (
-          <group key={i} position={[x, 0, z]} rotation={[0, r, 0]}>
+          <PopIn key={i} position={[x, 0, z]} rotation={[0, r, 0]} delay={delay + i * 0.07} drop={0.7}>
             <C pal={pal} level={level} color={accent} />
-          </group>
+          </PopIn>
         );
       })}
-      {level >= 2 && !lowBack && <Painting p={[plan.painting[0], plan.painting[1], back + 0.07]} hue={accent} />}
+      {level >= 2 && !lowBack && (
+        <PopIn position={[plan.painting[0], plan.painting[1], back + 0.07]} delay={delay + 0.6}><Painting p={[0, 0, 0]} hue={accent} /></PopIn>
+      )}
       {level >= 10 && (
-        <Ball p={[0, 2.3, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: pal.windowGlow, intensity: 0.8 })} />
+        <PopIn position={[0, 2.3, 0]} delay={delay + 0.7}>
+          <Ball p={[0, 0, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: pal.windowGlow, intensity: 0.8 })} />
+        </PopIn>
       )}
     </group>
   );

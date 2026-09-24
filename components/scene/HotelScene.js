@@ -6,16 +6,19 @@
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { PCFSoftShadowMap } from 'three';
 import { cam, FIT_WIDTH } from '../../game/camera';
+import { intro as introGate } from '../../game/fx';
 import { getHotel } from '../../game/hotels';
 import { QUALITY } from '../../game/quality';
 import { step } from '../../game/sim';
 import useHotel from '../../game/store';
 import Actors from './Actors';
+import { easeInOutCubic } from './anim';
 import DevProbe from './DevProbe';
+import { EventFx, FxLayer } from './Fx';
 import { Canvas } from './GLCanvas';
 import Hotel from './Hotel';
 import Particles from './Particles';
@@ -28,7 +31,6 @@ const CAM_DIST = 40;
 export const CAM_HEIGHT = 1.3;
 
 
-const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
 
 function CameraRig() {
   const { camera, size } = useThree();
@@ -43,16 +45,25 @@ function CameraRig() {
     intro.current = 0;
   }, [hotelId, roomCount]);
   useFrame(({ clock }, dt) => {
+    introGate.frames += 1;
     step(dt);
     const t = clock.elapsedTime;
     flickerMaterials(t);
 
-    // gentle zoom-in whenever a hotel is (re)entered
-    intro.current = Math.min(1, intro.current + dt / 1.6);
-    const introZoom = 0.72 + 0.28 * easeOutCubic(intro.current);
+    // intro swoop whenever a hotel is (re)entered: the camera circles in from
+    // the side, high up and zoomed out, while the hotel builds itself
+    intro.current = introGate.hold ? 0 : Math.min(1, intro.current + Math.min(dt, 1 / 30) / 2.6);
+    const e = easeInOutCubic(intro.current);
+    const introZoom = 0.62 + 0.38 * e;
+    const yaw = (1 - e) * 0.85;
+    const lift = 1 + (1 - e) * 0.7;
 
     // steeper tycoon view (~42.6° pitch): more floor, less wall
-    camera.position.set(cam.x + CAM_DIST, CAM_DIST * CAM_HEIGHT, cam.z + CAM_DIST);
+    camera.position.set(
+      cam.x + CAM_DIST * (Math.cos(yaw) + Math.sin(yaw)),
+      CAM_DIST * CAM_HEIGHT * lift,
+      cam.z + CAM_DIST * (Math.cos(yaw) - Math.sin(yaw)),
+    );
     camera.lookAt(cam.x, 0, cam.z);
     const zoom = (size.width / FIT_WIDTH) * cam.zoom * introZoom;
     if (Math.abs(camera.zoom - zoom) > 1e-3) {
@@ -92,8 +103,16 @@ function Lights({ shadows }) {
   );
 }
 
+let lastWorldHotel = null;
+
 function World({ hotelId, quality }) {
   const def = getHotel(hotelId);
+  // entering another hotel: hold the build-up until its title card fades
+  // (the card releases the gate); the very first mount waits for the splash
+  useState(() => {
+    if (lastWorldHotel && lastWorldHotel !== hotelId) introGate.hold = true;
+    lastWorldHotel = hotelId;
+  });
   const q = QUALITY[quality] ?? QUALITY.medium;
   return (
     <ThemeContext.Provider value={def}>
@@ -104,6 +123,8 @@ function World({ hotelId, quality }) {
       <Sky />
       <Hotel />
       <Actors />
+      <FxLayer />
+      <EventFx />
       <Particles density={q.particles} />
       {q.post && <PostFX />}
       {__DEV__ && <DevProbe />}
