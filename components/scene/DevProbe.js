@@ -8,6 +8,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Platform } from 'react-native';
 import { Vector3 } from 'three';
 import { ROOMS } from '../../game/config';
+import { cam } from '../../game/camera';
 import { sim } from '../../game/sim';
 import useHotel from '../../game/store';
 
@@ -28,14 +29,13 @@ export default function DevProbe() {
       }
       sim.roomDirty.forEach((d, r) => {
         if (!d) return;
-        const room = ROOMS[r];
-        // puddle sits at local (0.2, 0.55) in the (possibly rotated) room frame
-        const c = Math.cos(room.rot), s = Math.sin(room.rot);
-        pts.push(toScreen(room.center[0] + 0.2 * c + 0.55 * s, 0.1, room.center[1] - 0.2 * s + 0.55 * c));
+        // the puddle lies on the room's cleaning spot
+        pts.push(toScreen(ROOMS[r].clean[0], 0.1, ROOMS[r].clean[1]));
       });
       return pts;
     };
     window.__project = (x, y, z) => toScreen(x, y, z);
+    window.__cam = cam;
     window.__debugState = () => {
       const { coins, gems, activeHotel, hotels, stats } = useHotel.getState();
       const { totalEarned, rooms, barLevel, staff, attractions } = hotels[activeHotel];

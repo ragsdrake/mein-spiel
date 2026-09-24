@@ -137,13 +137,13 @@ function pay(g, amount, def) {
 const pathDeskToRoom = (r) => {
   const room = ROOMS[r];
   const via = isLeftRoom(r) ? [P.corridorE, P.corridorW] : [P.corridorE];
-  return [P.afterDesk, ...via, room.door, room.center];
+  return [P.afterDesk, ...via, room.door, room.entry, room.bed];
 };
 
 const pathRoomToExit = (r) => {
   const room = ROOMS[r];
   const via = isLeftRoom(r) ? [P.corridorW] : [];
-  return [room.door, ...via, [13.4, 3.9], [13.4, 12.2], P.exit];
+  return [room.entry, room.door, ...via, [13.4, 3.9], [13.4, 12.2], P.exit];
 };
 
 const pathRoomToStool = (r, s) => {
@@ -152,7 +152,7 @@ const pathRoomToStool = (r, s) => {
   const via = isLeftRoom(r)
     ? [[4.3, room.door[1]], [4.3, 6.9]]
     : [[10.2, 3.9], [10.2, 6.9]];
-  return [room.door, ...via, [stool[0], 6.9], stool];
+  return [room.entry, room.door, ...via, [stool[0], 6.9], stool];
 };
 
 const pathStoolToExit = (s) => [[P.stools[s][0], 6.9], [13.4, 6.9], [13.4, 12.2], P.exit];
@@ -249,7 +249,7 @@ function updateGuest(g, dt, def, hs) {
         g.state = 'sleep';
         g.timer = STAY_SECONDS;
         g.bubble = 'zzz';
-        g.facing = ROOMS[g.room].rot + Math.PI / 2;
+        g.facing = ROOMS[g.room].bedFacing;
       }
       break;
     case 'sleep': {
@@ -333,10 +333,8 @@ function updateBarkeeper(hs) {
 
 function cleanerPathTo(r) {
   const room = ROOMS[r];
-  const via = isLeftRoom(r) ? [[4.4, room.door[1]]] : [[4.4, 3.9], room.door];
-  const bed = room.center;
-  const spot = isLeftRoom(r) ? [bed[0] + 0.9, bed[1] + 0.6] : [bed[0] + 0.6, bed[1] + 0.9];
-  return [[4.4, P.cleanerIdle[1]], ...via, spot];
+  const via = isLeftRoom(r) ? [[4.4, room.door[1]], room.door] : [[4.4, 3.9], room.door];
+  return [[4.4, P.cleanerIdle[1]], ...via, room.entry, room.clean];
 }
 
 function finishClean(r) {
@@ -376,8 +374,8 @@ function updateCleaner(dt, hs) {
   if (c.timer <= 0) {
     finishClean(c.task);
     const back = isLeftRoom(c.task)
-      ? [[4.4, ROOMS[c.task].door[1]]]
-      : [ROOMS[c.task].door, [4.4, 3.9]];
+      ? [ROOMS[c.task].entry, ROOMS[c.task].door, [4.4, ROOMS[c.task].door[1]]]
+      : [ROOMS[c.task].entry, ROOMS[c.task].door, [4.4, 3.9]];
     c.task = null;
     c.working = false;
     c.path = [...back, [4.4, P.cleanerIdle[1]], P.cleanerIdle];

@@ -6,6 +6,7 @@
   <img src="docs/pyramide.png" width="200" alt="Pharaonengrab" />
   <img src="docs/eispalast.png" width="200" alt="Yeti-Eispalast" />
   <img src="docs/upgrade-karte.png" width="200" alt="Upgrade-Karte" />
+  <img src="docs/zimmer.png" width="200" alt="Zimmer mit Türen und eigener Einrichtung" />
 </p>
 
 Ein 3D-Idle-Game über Hotels für Monster. Du startest mit dem **Spukhotel Nachtruh** für Gespenster

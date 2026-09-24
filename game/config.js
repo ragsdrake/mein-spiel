@@ -99,14 +99,48 @@ export const NIGHT_START_MIN  = 20 * 60;
 export const NIGHT_LENGTH_MIN = 10 * 60;
 
 // ─── floor plan ──────────────────────────────────────────────────────────────
-/** Guest rooms: `center` is where the bed stands, `door` the corridor entry. */
+/**
+ * Room layouts in room-local coordinates (x across the room, −z = back wall,
+ * the front wall with the door at z = `front`). Beds lie along their local x
+ * with the pillow at −x; `bedRot` turns them. Furniture is placed by the
+ * scene (components/scene/Hotel.js) per layout.
+ */
+export const ROOM_LAYOUTS = [
+  { doorX:  0.8,  bed: [-0.35, -0.9],  bedRot: 0,            clean: [0.3, 0.15] },
+  { doorX: -0.8,  bed: [0.35, -0.9],   bedRot: Math.PI,      clean: [-0.3, 0.15] },
+  { doorX:  0.75, bed: [-0.85, -0.35], bedRot: -Math.PI / 2, clean: [0, 0.4] },
+  { doorX: -0.1,  bed: [0.8, -0.3],    bedRot: -Math.PI / 2, clean: [-0.3, -0.1] },
+];
+
+/** room-local → world for a room centred at `c` turned by `rot` */
+const toWorld = ([cx, cz], rot, [x, z]) => [
+  cx + x * Math.cos(rot) + z * Math.sin(rot),
+  cz - x * Math.sin(rot) + z * Math.cos(rot),
+];
+
+function room(center, rot, layout, front, corridor) {
+  const L = ROOM_LAYOUTS[layout];
+  return {
+    center,                                           // room middle (for markers)
+    rot,
+    layout,
+    front,                                            // local z of the front wall
+    door:     toWorld(center, rot, [L.doorX, corridor]),   // corridor spot in front of the door
+    entry:    toWorld(center, rot, [L.doorX, front - 0.55]), // just inside the door
+    bed:      toWorld(center, rot, L.bed),            // where the guest sleeps
+    bedFacing: rot + L.bedRot + Math.PI / 2,
+    clean:    toWorld(center, rot, L.clean),          // where the cleaner mops
+  };
+}
+
+/** Guest rooms along the back wall (z = 0) and the left wall (x = 0). */
 export const ROOMS = [
-  { center: [2, 1.5],   door: [2, 3.9],   rot: 0 },
-  { center: [5, 1.5],   door: [5, 3.9],   rot: 0 },
-  { center: [8, 1.5],   door: [8, 3.9],   rot: 0 },
-  { center: [11, 1.5],  door: [11, 3.9],  rot: 0 },
-  { center: [1.6, 5.2], door: [3.9, 5.2], rot: Math.PI / 2 },
-  { center: [1.6, 8.2], door: [3.9, 8.2], rot: Math.PI / 2 },
+  room([2, 1.5],   0,           0, 1.6, 2.4),
+  room([5, 1.5],   0,           2, 1.6, 2.4),
+  room([8, 1.5],   0,           1, 1.6, 2.4),
+  room([11, 1.5],  0,           3, 1.6, 2.4),
+  room([1.6, 5.2], Math.PI / 2, 3, 1.5, 2.3),
+  room([1.6, 8.2], Math.PI / 2, 2, 1.5, 2.3),
 ];
 
 export const P = {

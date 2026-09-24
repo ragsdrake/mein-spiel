@@ -8,16 +8,17 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import {
-  ATTRACTION_SPOTS, BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
+  ATTRACTION_SPOTS, BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_LAYOUTS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
   receptionUpgradeCost, roomUpgradeCost,
 } from '../../game/config';
-import { tapRoom, useSim } from '../../game/sim';
+import { sim, tapRoom, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
 import Bed from './Beds';
 import EXTERIORS from './exteriors';
+import { ROOM_COLORS, RoomInterior } from './RoomFurniture';
 import Street from './Street';
-import { Candelabra, Candle, Cobweb, GOLD, Padlock, Painting, Table, Torch, Window } from './Props';
+import { Candelabra, Candle, Cobweb, GOLD, Padlock, Table, Torch, Window } from './Props';
 import { Ball, Blob, Box, Cyl, Halo, M, Rock } from './primitives';
 import { useTheme } from './theme';
 
@@ -70,10 +71,14 @@ function Room({ index }) {
   });
   const open = () => openUpgrade('room', index);
   const def = ROOMS[index];
+  const L = ROOM_LAYOUTS[def.layout];
   const [cx, cz] = def.center;
+  const back = def.rot ? -1.6 : -1.5;
+  const span = index === 0 ? [-2, 1.5] : [-1.5, 1.5];
 
   return (
     <group position={[cx, 0, cz]} rotation={[0, def.rot, 0]}>
+      <RoomWalls index={index} def={def} doorX={L.doorX} back={back} span={span} locked={level === 0} />
       {level === 0 ? (
         <group>
           <Box p={[-0.4, 0.3, -0.5]} s={[0.6, 0.6, 0.6]} r={[0, 0.3, 0]} mat={M('#7a5234', { tx: 'planks', bump: 1 })} />
@@ -85,46 +90,11 @@ function Room({ index }) {
         </group>
       ) : (
         <group>
-          {/* accent rug, bed, and a fully furnished room from level 1 */}
-          <Box p={[0, 0.025, 0.25]} s={[2.1, 0.02, 1.5]} mat={M(palette.rugHi)} cast={false} />
-          <group position={[0, 0.03, -0.35]}>
+          <group position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]}>
             <Bed kind={theme.bed} level={level} />
           </group>
-          <Box p={[1.15, 0.3, -1.05]} s={[0.45, 0.6, 0.4]} mat={M(palette.wood)} />
-          <Candle p={[1.15, 0.6, -1.05]} />
-          <group position={[-1.15, 0, -1.0]}>
-            <Box p={[0, 0.75, 0]} s={[0.55, 1.5, 0.45]} mat={M(palette.woodDark)} />
-            <Box p={[0, 0.75, 0.23]} s={[0.02, 1.3, 0.02]} mat={level >= 4 ? GOLD() : M(palette.wood)} cast={false} />
-          </group>
-          {/* armchair */}
-          <group position={[1.1, 0, 0.95]} rotation={[0, -0.6, 0]}>
-            <Box p={[0, 0.2, 0]} s={[0.55, 0.4, 0.5]} mat={M(palette.zoneLounge)} />
-            <Box p={[0, 0.5, -0.2]} s={[0.55, 0.5, 0.12]} mat={M(palette.zoneLounge)} />
-            <Box p={[0.25, 0.32, 0]} s={[0.08, 0.3, 0.5]} mat={M(palette.zoneLounge)} />
-            <Box p={[-0.25, 0.32, 0]} s={[0.08, 0.3, 0.5]} mat={M(palette.zoneLounge)} />
-          </group>
-          {/* suitcase */}
-          <group position={[-0.95, 0, 0.95]} rotation={[0, 0.4, 0]}>
-            <Box p={[0, 0.22, 0]} s={[0.45, 0.42, 0.18]} mat={M(palette.zoneDesk)} />
-            <Box p={[0, 0.47, 0]} s={[0.18, 0.06, 0.05]} mat={M('#2c2433')} />
-          </group>
-          {/* floor lamp */}
-          <group position={[1.3, 0, -0.35]}>
-            <Cyl p={[0, 0.5, 0]} rt={0.025} h={1} seg={5} c="#3a3440" />
-            <Cyl p={[0, 1.05, 0]} rt={0.12} rb={0.2} h={0.22} seg={8} mat={M('#fff4d8', { emissive: '#ffe0a0', intensity: 0.5 })} />
-          </group>
-          {level >= 2 && <Painting p={[0, 1.8, -1.42]} hue={index % 2 ? '#40506e' : '#3c6b5a'} />}
-          {level >= 6 && <Candelabra p={[-1.25, 0, 0.2]} gold />}
-          {level >= 8 && (
-            <group position={[-0.3, 0, 1.15]}>
-              <Cyl p={[0, 0.2, 0]} rt={0.18} rb={0.13} h={0.4} seg={8} c="#8a4a8f" />
-              <Rock p={[0, 0.6, 0]} rad={0.28} sc={[1, 1.3, 1]} c="#3fb84a" />
-            </group>
-          )}
-          {level >= 10 && (
-            <Ball p={[0, 2.3, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: palette.windowGlow, intensity: 0.8 })} />
-          )}
-          {dirty && <Puddle index={index} showHint={!hasCleaner} color={palette.slime} />}
+          <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back} />
+          {dirty && <Puddle index={index} p={L.clean} showHint={!hasCleaner} color={palette.slime} />}
           <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
           {affordable && !dirty && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
         </group>
@@ -133,7 +103,78 @@ function Room({ index }) {
   );
 }
 
-function Puddle({ index, showHint, color }) {
+// ─── room walls: wallpaper, front wall with a door that opens for walkers ────
+const DOOR_W = 0.8;
+const FRONT_H = 0.95;
+
+function RoomWalls({ index, def, doorX, back, span, locked }) {
+  const { palette } = useTheme();
+  const leaf = useRef();
+  const open = useRef(0);
+  const { paper, accent } = ROOM_COLORS[index % ROOM_COLORS.length];
+  const wall = M(palette.wall);
+  const cap = M(palette.wallTop);
+  const frame = M(palette.woodDark);
+  const f = def.front;
+  const gap0 = doorX - DOOR_W / 2 - 0.06;
+  const gap1 = doorX + DOOR_W / 2 + 0.06;
+  // world position of the doorway, to open the door when someone is close
+  const c = Math.cos(def.rot), sn = Math.sin(def.rot);
+  const wx = def.center[0] + doorX * c + f * sn;
+  const wz = def.center[1] - doorX * sn + f * c;
+
+  useFrame((_, dt) => {
+    if (!leaf.current) return;
+    let near = false;
+    if (!locked) {
+      const close = (p) => (p[0] - wx) ** 2 + (p[1] - wz) ** 2 < 1.3;
+      for (const g of sim.guests.values()) if (close(g.pos)) { near = true; break; }
+      if (!near && close(sim.cleaner.pos)) near = true;
+    }
+    open.current += ((near ? 1 : 0) - open.current) * Math.min(1, dt * 8);
+    leaf.current.rotation.y = open.current * 1.6;
+  });
+
+  const seg = (x0, x1, key) => x1 - x0 > 0.02 && (
+    <group key={key}>
+      <Box p={[(x0 + x1) / 2, FRONT_H / 2, f]} s={[x1 - x0, FRONT_H, 0.22]} mat={wall} />
+      <Box p={[(x0 + x1) / 2, FRONT_H + 0.03, f]} s={[x1 - x0 + 0.02, 0.06, 0.26]} mat={cap} />
+    </group>
+  );
+
+  return (
+    <group>
+      {/* wallpaper + skirting in the room colour */}
+      <Box p={[(span[0] + span[1]) / 2, 1.3, back + 0.015]} s={[span[1] - span[0] - 0.3, 2.5, 0.03]} mat={M(paper)} cast={false} />
+      <Box p={[(span[0] + span[1]) / 2, 0.12, back + 0.035]} s={[span[1] - span[0] - 0.3, 0.24, 0.03]} mat={M(accent)} cast={false} />
+      {/* front wall with door gap */}
+      {seg(span[0], gap0, 'l')}
+      {seg(gap1, span[1], 'r')}
+      {/* door frame */}
+      <Box p={[gap0 + 0.04, 0.95, f]} s={[0.1, 1.9, 0.28]} mat={frame} />
+      <Box p={[gap1 - 0.04, 0.95, f]} s={[0.1, 1.9, 0.28]} mat={frame} />
+      <Box p={[doorX, 1.94, f]} s={[gap1 - gap0 + 0.1, 0.12, 0.3]} mat={frame} />
+      {/* number plate */}
+      <Box p={[doorX, 2.14, f + 0.02]} s={[0.36, 0.22, 0.05]} mat={M(accent)} cast={false} />
+      <Box p={[doorX, 2.14, f + 0.05]} s={[0.1, 0.12, 0.02]} mat={M('#ffffff')} cast={false} />
+      {/* door leaf, hinged at the left post */}
+      <group ref={leaf} position={[doorX - DOOR_W / 2, 0, f]}>
+        <Box p={[DOOR_W / 2, 0.88, 0]} s={[DOOR_W, 1.76, 0.08]} mat={M(accent)} />
+        <Box p={[DOOR_W / 2, 1.2, 0.045]} s={[DOOR_W - 0.24, 0.55, 0.02]} mat={M('#ffffff', { opacity: 0.35 })} cast={false} />
+        <Box p={[DOOR_W / 2, 0.5, 0.045]} s={[DOOR_W - 0.24, 0.5, 0.02]} mat={M('#ffffff', { opacity: 0.35 })} cast={false} />
+        <Ball p={[DOOR_W - 0.12, 0.9, 0.07]} rad={0.045} w={6} hs={4} mat={GOLD()} cast={false} />
+        {locked && (
+          <group>
+            <Box p={[DOOR_W / 2, 1.1, 0.08]} s={[1.0, 0.14, 0.05]} r={[0, 0, 0.5]} mat={M(palette.wood)} />
+            <Box p={[DOOR_W / 2, 0.6, 0.08]} s={[1.0, 0.14, 0.05]} r={[0, 0, -0.45]} mat={M(palette.wood)} />
+          </group>
+        )}
+      </group>
+    </group>
+  );
+}
+
+function Puddle({ index, p, showHint, color }) {
   const hint = useRef();
   useFrame(({ clock }) => {
     if (hint.current) hint.current.position.y = 1.4 + Math.sin(clock.elapsedTime * 4) * 0.08;
@@ -141,7 +182,7 @@ function Puddle({ index, showHint, color }) {
   const slime = M(color, { emissive: color, intensity: 0.8, opacity: 0.85, rough: 0.1 });
   const press = (e) => { e.stopPropagation(); tapRoom(index); };
   return (
-    <group position={[0.2, 0, 0.55]} onClick={press}>
+    <group position={[p[0], 0, p[1]]} onClick={press}>
       <Cyl p={[0, 0.05, 0]} rt={0.45} h={0.03} seg={9} mat={slime} cast={false} />
       <Cyl p={[0.45, 0.05, 0.2]} rt={0.22} h={0.03} seg={7} mat={slime} cast={false} />
       <Cyl p={[-0.35, 0.05, 0.3]} rt={0.16} h={0.03} seg={6} mat={slime} cast={false} />
