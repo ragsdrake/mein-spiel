@@ -3,12 +3,12 @@
  * camera controller inside the Canvas. `x`/`z` is the ground point the
  * isometric camera looks at, `zoom` a multiplier on the fit-to-width zoom.
  */
-export const cam = { x: 8.5, z: 7.7, zoom: 1 };
+export const cam = { x: 8.6, z: 8.4, zoom: 1 };
 
 export const CAM_BOUNDS = { minX: 2, maxX: 15, minZ: 2, maxZ: 17, minZoom: 0.7, maxZoom: 2.2 };
 
 /** World units visible across the screen width at zoom 1. */
-export const FIT_WIDTH = 14.5;
+export const FIT_WIDTH = 17.5;
 
 const SIN_ELEVATION = 0.5774;   // camera sits on the (1, 1, 1) diagonal
 

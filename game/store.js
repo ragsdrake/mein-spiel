@@ -14,7 +14,7 @@ import {
   ATTRACTION_EFFECT, ATTRACTION_MAX_LEVEL, BAR_MAX_LEVEL, BOOST_COST_GEMS, BOOST_SECONDS,
   GEMS_PER_STAR, INSTANT_COST_GEMS, INSTANT_SECONDS, OFFLINE_CAP_SECONDS, OFFLINE_MIN_SECONDS,
   PASSIVE_SHARE, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, STAFF_HIRE_COST, STAFF_MAX_LEVEL,
-  STAY_SECONDS, TIP_CHANCE, attractionCost, barUpgradeCost, drinkPrice, receptionUpgradeCost,
+  STAY_SECONDS, TIP_CHANCE, AD_BOOST_SECONDS, AD_BOOST_CAP_SECONDS, attractionCost, barUpgradeCost, drinkPrice, receptionUpgradeCost,
   roomPrice, roomUnlockCost, roomUpgradeCost, staffUpgradeCost, starsFor,
 } from './config';
 import { HOTELS, getHotel } from './hotels';
@@ -125,6 +125,19 @@ const useHotel = create(persist((set, get) => {
       if (!h.staff.reception) perSec *= 0.3;
       if (!h.staff.cleaner)   perSec *= 0.5;
       return perSec;
+    },
+
+    /** What the HUD shows as "+x/s": active hotel + passive share of the others, boost included. */
+    totalIncomePerSecond() {
+      const { hotels, activeHotel } = get();
+      let perSec = get().estimatedIncomePerSecond(activeHotel);
+      for (const def of HOTELS) {
+        const h = hotels[def.id];
+        if (def.id !== activeHotel && h.unlocked && h.staff.reception) {
+          perSec += get().estimatedIncomePerSecond(def.id) * PASSIVE_SHARE;
+        }
+      }
+      return perSec * (get().isBoosted() ? 2 : 1);
     },
 
     // ── earnings ───────────────────────────────────────────────────────────
@@ -257,6 +270,34 @@ const useHotel = create(persist((set, get) => {
       const base = Math.max(Date.now(), get().boostUntil);
       set(s => ({ gems: s.gems - BOOST_COST_GEMS, boostUntil: base + BOOST_SECONDS * 1000 }));
       return true;
+    },
+
+    /** Rewarded ad: +4 min of ×2 income, stackable up to 4 h (Codigames-style). */
+    adBoost() {
+      const now = Date.now();
+      const until = Math.min(now + AD_BOOST_CAP_SECONDS * 1000, Math.max(now, get().boostUntil) + AD_BOOST_SECONDS * 1000);
+      set({ boostUntil: until });
+    },
+
+    /** Rewarded ad in the shop: 10 minutes of income right away (at least 100 × pm). */
+    adChest() {
+      const pm = getHotel(get().activeHotel).pm;
+      const amount = Math.max(100 * pm, Math.floor(get().instantIncome() / 6));
+      set(s => ({ coins: s.coins + amount }));
+      return amount;
+    },
+
+    /** Rewarded ad on the offline popup: collect twice the amount. */
+    collectOfflineAd() {
+      const off = get().offline;
+      if (!off) return;
+      set(s => {
+        let next = { ...s, offline: null };
+        for (const [id, a] of off.perHotel) {
+          if (a > 0) next = { ...next, ...creditCoins(next, id, a * 2) };
+        }
+        return next;
+      });
     },
 
     /** One hour of (estimated) income of all hotels, paid out right now. */

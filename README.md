@@ -5,6 +5,7 @@
   <img src="docs/dracula.png" width="200" alt="Burg Dracula" />
   <img src="docs/pyramide.png" width="200" alt="Pharaonengrab" />
   <img src="docs/eispalast.png" width="200" alt="Yeti-Eispalast" />
+  <img src="docs/upgrade-karte.png" width="200" alt="Upgrade-Karte" />
 </p>
 
 Ein 3D-Idle-Game über Hotels für Monster. Du startest mit dem **Spukhotel Nachtruh** für Gespenster
@@ -13,10 +14,11 @@ und baust ein Imperium auf: **Burg Dracula** (Vampire, Werwölfe, Nosferatu), da
 Gäste checken ein, schlafen, trinken an der Bar, zahlen und geben Trinkgeld – Personal
 automatisiert die Arbeit, und nicht besuchte Hotels verdienen nebenbei weiter.
 
-Alle Grafiken sind eigene 3D-Modelle, direkt im Code gebaut: prozedurale Texturen
-(Holz, Stein, Sandstein, Eis), dynamisches Licht mit flackernden Kerzen, weiche Schatten,
-Bloom-Leuchteffekte, Partikel (Irrlichter, Fledermäuse, Sand, Schnee), Nebelschwaden und Nordlicht.
-Keine Bilddateien, keine gekauften Assets.
+Look & Bedienung orientieren sich an den Codigames-Tycoons (Idle Supermarket, Theme Park,
+Prison Empire): helle, kräftige Flat-Shading-Welt, kleine blockige Figuren mit Lauf-Animation,
+Geld + Einkommen/Sekunde oben links, Video-×2-Button, weiße Upgrade-Karten mit ×1/×10/MAX,
+Meilensteinen und Mitarbeiter-Zeile, grüne Upgrade-Pfeile direkt in der Welt.
+Alle Grafiken sind eigene 3D-Modelle, direkt im Code gebaut – keine Bilddateien, keine gekauften Assets.
 
 ## Starten
 
@@ -35,6 +37,9 @@ npx expo start --web    # im Browser spielen
 | **Goldmünze** über einem Gast | antippen → Trinkgeld (×3) |
 | **Schleim/Flecken** im Zimmer | antippen → putzen (erst dann ist das Zimmer wieder frei) |
 | Kamera | ziehen = umsehen, zwei Finger / Mausrad = zoomen |
+| **Zimmer / Bar / Rezeption antippen** | Upgrade-Karte öffnet sich (×1 / ×10 / MAX, Meilensteine, Mitarbeiter) |
+| **Grüner Pfeil** über einer Station | Upgrade ist bezahlbar |
+| **Video ×2** (unten links) | Werbevideo → 4 Min doppelte Einnahmen (bis 4 h stapelbar) – aktuell Platzhalter, siehe `game/ads.js` |
 | **Zimmer** | Zimmer öffnen und ausbauen (mehr Geld, schönere Einrichtung) |
 | **Betrieb** | Bar & Rezeption ausbauen, **Attraktionen** im Garten bauen (Trinkgeld-, Zimmer- und Tempo-Boni) |
 | **Personal** | einstellen (Automatik) und schulen (bis Stufe 5, schneller) |

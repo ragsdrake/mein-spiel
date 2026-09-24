@@ -1,37 +1,34 @@
 /**
- * HUD header: coins, guests, gems, hotel stars, nightly balance, clock,
- * hotel name and settings.
+ * Tycoon-style HUD header (Codigames layout): money + income per second top
+ * left, gems top right, clock/boost pills, hotel rating, and a column of
+ * white square shortcut buttons on the right edge.
  */
 
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import { starProgress, starsFor } from '../../game/config';
 import { fmt, fmtDuration } from '../../game/format';
+import { HOTELS } from '../../game/hotels';
+import { questDone } from '../../game/quests';
 import { useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
-import GameButton from './GameButton';
-import { C, GRAD } from './theme';
-import Txt from './Txt';
+import { FONT } from './theme';
+
+const PANEL = 'rgba(20, 28, 60, 0.72)';
+const MONEY = '#3fd06a';
 
 function clockLabel(minute) {
   const m = minute % (24 * 60);
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
-function Pill({ children, style, onPress }) {
-  const Wrap = onPress ? Pressable : View;
-  return (
-    <Wrap onPress={onPress} style={[styles.pill, style]}>
-      <LinearGradient colors={GRAD.panel} style={[StyleSheet.absoluteFill, { borderRadius: 13 }]} />
-      {children}
-    </Wrap>
-  );
+function T({ size = 16, color = '#fff', style, children }) {
+  return <Text style={[styles.t, { fontSize: size, color }, style]}>{children}</Text>;
 }
 
 function GainPopup() {
@@ -42,32 +39,48 @@ function GainPopup() {
     if (!gain) return;
     y.value = 0;
     o.value = 1;
-    y.value = withTiming(-26, { duration: 900 });
+    y.value = withTiming(-22, { duration: 900 });
     o.value = withSequence(withTiming(1, { duration: 500 }), withTiming(0, { duration: 400 }));
   }, [gain, o, y]);
   const style = useAnimatedStyle(() => ({ opacity: o.value, transform: [{ translateY: y.value }] }));
   if (!gain) return null;
   return (
     <Animated.View style={[styles.gain, style]} pointerEvents="none">
-      <Txt size={16} color={C.gold}>+{fmt(gain.amount)}</Txt>
+      <T size={15} color={MONEY}>+{fmt(gain.amount)}</T>
     </Animated.View>
   );
 }
 
-/** Coin counter that pops whenever money comes in. */
-function Coins() {
+/** Money counter that pops whenever cash comes in. */
+function Money() {
   const coins = useHotel(s => s.coins);
+  const perSec = useHotel(s => s.totalIncomePerSecond());
   const scale = useSharedValue(1);
   useEffect(() => {
-    scale.value = withSequence(withTiming(1.15, { duration: 90 }), withSpring(1));
+    scale.value = withSequence(withTiming(1.12, { duration: 80 }), withSpring(1));
   }, [coins, scale]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
-    <View style={styles.stat}>
-      <Animated.View style={style}><Icon name="circle-multiple" size={22} color={C.gold} /></Animated.View>
-      <Txt size={18}>{fmt(coins)}</Txt>
+    <View style={styles.moneyPanel}>
+      <View style={styles.row}>
+        <Animated.View style={style}><Icon name="cash" size={26} color={MONEY} /></Animated.View>
+        <T size={20}>{fmt(coins)}</T>
+      </View>
+      <View style={styles.row}>
+        <Icon name="chart-line" size={18} color={MONEY} />
+        <T size={14} color={MONEY}>+{fmt(perSec)}/s</T>
+      </View>
       <GainPopup />
     </View>
+  );
+}
+
+function SideButton({ icon, color = '#2f6fe0', onPress, dot }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.side, pressed && styles.pressed]}>
+      <Icon name={icon} size={26} color={color} />
+      {dot ? <View style={styles.dot} /> : null}
+    </Pressable>
   );
 }
 
@@ -75,9 +88,9 @@ export default function TopBar() {
   const def = useHotel(s => s.activeDef());
   const gems = useHotel(s => s.gems);
   const earned = useHotel(s => s.hotels[s.activeHotel].totalEarned);
-  const rooms = useHotel(s => s.hotels[s.activeHotel].rooms);
-  const nightEarned = useHotel(s => s.nightEarned);
   const boostUntil = useHotel(s => s.boostUntil);
+  const questReady = useHotel(s => s.quests.some(q => questDone(q, s.stats)));
+  const hotelReady = useHotel(s => HOTELS.some(h => s.canUnlockHotel(h.id)));
   const guests = useSim(s => s.guestIds.length);
   const minute = useSim(s => s.minute);
   const openSheet = useUi(s => s.openSheet);
@@ -90,101 +103,94 @@ export default function TopBar() {
 
   const stars = starsFor(earned, def.pm);
   const progress = starProgress(earned, def.pm);
-  const capacity = rooms.filter(Boolean).length;
   const boostLeft = (boostUntil - now) / 1000;
 
   return (
     <View style={styles.wrap} pointerEvents="box-none">
-      <View style={styles.row} pointerEvents="box-none">
-        <Pill>
-          <Coins />
-          <View style={styles.stat}>
-            <Icon name="account-group" size={20} color="#dfeaff" />
-            <Txt size={16}>{guests}/{capacity}</Txt>
+      <View style={styles.top} pointerEvents="box-none">
+        <View style={styles.leftCol} pointerEvents="box-none">
+          <Money />
+          <View style={styles.row} pointerEvents="box-none">
+            <View style={styles.clock}>
+              <Icon name="clock-outline" size={16} color="#fff" />
+              <T size={15}>{clockLabel(minute)}</T>
+              <Icon name="weather-night" size={16} color="#fff" />
+            </View>
+            {boostLeft > 0 && (
+              <View style={[styles.clock, styles.boost]}>
+                <Icon name="cash-multiple" size={16} color="#fff" />
+                <T size={14}>×2 {fmtDuration(boostLeft)}</T>
+              </View>
+            )}
           </View>
-          <Pressable style={styles.stat} onPress={() => openSheet('shop')}>
-            <Icon name="diamond-stone" size={20} color={C.purple} />
-            <Txt size={16}>{gems}</Txt>
-            <View style={styles.plus}><Icon name="plus" size={14} color={C.white} /></View>
-          </Pressable>
-        </Pill>
-
-        <Pill style={styles.stars} onPress={() => openSheet('guests')}>
-          <View style={styles.starRow}>
-            {[0, 1, 2, 3, 4].map(i => (
-              <Icon key={i} name="star" size={19} color={i < stars ? C.gold : '#4a4468'} />
-            ))}
-          </View>
-          <View style={styles.progress}>
-            <LinearGradient colors={GRAD.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
-          </View>
-        </Pill>
-      </View>
-
-      <View style={styles.row} pointerEvents="box-none">
-        <Pill style={styles.small}>
-          <Icon name="weather-night" size={18} color={C.gold} />
-          <Txt size={15}>Nachtbilanz: </Txt>
-          <Txt size={15} color={C.green}>+{fmt(nightEarned)}</Txt>
-        </Pill>
-        <View style={styles.rightCol} pointerEvents="box-none">
-          <Pill style={styles.small}>
-            <Icon name="clock-outline" size={18} color={C.white} />
-            <Txt size={16}>{clockLabel(minute)}</Txt>
-          </Pill>
-          <GameButton grad="grey" radius={14} onPress={() => openSheet('settings')} style={styles.gear}>
-            <Icon name="cog" size={20} color={C.white} />
-          </GameButton>
         </View>
-      </View>
 
-      <View style={styles.row} pointerEvents="box-none">
-        <Pill style={styles.small} onPress={() => openSheet('hotels')}>
-          <Icon name={def.icon} size={18} color={def.palette.window} />
-          <Txt size={14}>{def.name}</Txt>
-          <Icon name="chevron-down" size={16} color={C.muted} />
-        </Pill>
-        {boostLeft > 0 && (
-          <Pill style={[styles.small, styles.boost]}>
-            <Icon name="timer-sand" size={16} color={C.gold} />
-            <Txt size={14}>×2  {fmtDuration(boostLeft)}</Txt>
-          </Pill>
-        )}
+        <View style={styles.rightCol} pointerEvents="box-none">
+          <Pressable style={styles.gemPanel} onPress={() => openSheet('shop')}>
+            <Icon name="diamond-stone" size={22} color="#ffb52a" />
+            <T size={18}>{gems}</T>
+            <View style={styles.plus}><Icon name="plus" size={16} color="#fff" /></View>
+          </Pressable>
+          <Pressable style={styles.ratingPanel} onPress={() => openSheet('guests')}>
+            <View style={styles.row}>
+              {[0, 1, 2, 3, 4].map(i => (
+                <Icon key={i} name="star" size={15} color={i < stars ? '#ffc94a' : 'rgba(255,255,255,0.25)'} />
+              ))}
+            </View>
+            <View style={styles.progress}><View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} /></View>
+            <View style={styles.row}>
+              <Icon name="account-group" size={14} color="#cfe0ff" />
+              <T size={12} color="#cfe0ff">{guests} Gäste</T>
+            </View>
+          </Pressable>
+          <View style={styles.sideCol} pointerEvents="box-none">
+            <SideButton icon="map-marker-radius" onPress={() => openSheet('hotels')} dot={hotelReady} />
+            <SideButton icon="clipboard-check" color="#28a85a" onPress={() => openSheet('quests')} dot={questReady} />
+            <SideButton icon="chart-bar" color="#8a4ae0" onPress={() => openSheet('guests')} />
+            <SideButton icon="cog" color="#6a7090" onPress={() => openSheet('settings')} />
+          </View>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 10, gap: 6 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
-  rightCol: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  pill: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    gap:             10,
-    borderRadius:    15,
-    borderWidth:     2,
-    borderColor:     C.border,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flexShrink:      1,
-    overflow:        'visible',
+  wrap: { paddingHorizontal: 8 },
+  top: { flexDirection: 'row', justifyContent: 'space-between' },
+  leftCol: { gap: 6, alignItems: 'flex-start' },
+  rightCol: { gap: 6, alignItems: 'flex-end' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  t: {
+    fontFamily: FONT, color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.55)', textShadowOffset: { width: 0, height: 1.5 }, textShadowRadius: 1,
   },
-  small: { gap: 6, paddingVertical: 4 },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  moneyPanel: { backgroundColor: PANEL, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 5, gap: 1, minWidth: 150 },
+  gemPanel: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: PANEL, borderRadius: 10,
+    paddingLeft: 10, paddingRight: 5, paddingVertical: 5,
+  },
   plus: {
-    backgroundColor: C.orange, borderRadius: 6, width: 18, height: 18,
-    alignItems: 'center', justifyContent: 'center', marginLeft: 2, borderWidth: 1.5, borderColor: C.border,
+    width: 24, height: 24, borderRadius: 6, backgroundColor: '#ff9a1a', alignItems: 'center', justifyContent: 'center',
+    borderBottomWidth: 3, borderBottomColor: '#c86a0a',
   },
-  stars: { flexDirection: 'column', gap: 0, paddingHorizontal: 8, paddingVertical: 5, alignItems: 'center' },
-  starRow: { flexDirection: 'row' },
-  progress: {
-    marginTop: 3, height: 7, width: '100%', borderRadius: 4, backgroundColor: '#2a2446', overflow: 'hidden',
+  ratingPanel: { backgroundColor: PANEL, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5, alignItems: 'center', gap: 3 },
+  progress: { height: 6, width: 90, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#ffc94a' },
+  clock: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#f5a623', borderRadius: 8,
+    paddingHorizontal: 8, paddingVertical: 3, borderBottomWidth: 3, borderBottomColor: '#c07a10',
   },
-  progressFill: { height: '100%', borderRadius: 4 },
-  boost: { borderColor: C.goldDark },
-  gear: { width: 38, height: 34 },
-  gain: { position: 'absolute', left: 26, top: 22 },
+  boost: { backgroundColor: '#28b45a', borderBottomColor: '#1a8040' },
+  sideCol: { gap: 8, marginTop: 4 },
+  side: {
+    width: 48, height: 48, borderRadius: 12, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center',
+    borderBottomWidth: 4, borderBottomColor: '#c8d0e4',
+  },
+  pressed: { transform: [{ scale: 0.93 }] },
+  dot: {
+    position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8,
+    backgroundColor: '#ff3b4a', borderWidth: 2, borderColor: '#fff',
+  },
+  gain: { position: 'absolute', left: 40, top: 30 },
 });

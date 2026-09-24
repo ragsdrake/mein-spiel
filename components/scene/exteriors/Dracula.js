@@ -6,8 +6,8 @@ import {
   Bush, DeadTree, Fence, Floaty, GardenPath, Gravestone, Ground, Hill, PoleTorch, Tower,
 } from './common';
 
-const CASTLE = '#5d5566';
-const ROOF = '#3a0f1a';
+const CASTLE = '#b4acc0';
+const ROOF = '#d0344a';
 const BLOOD = () => M('#c0122a', { emissive: '#ff0a2a', intensity: 1.4, rough: 0.1 });
 
 function Gargoyle({ p, r = 0 }) {
@@ -40,8 +40,8 @@ function Outside() {
       <Tower p={[-7, -0.5, 0]} h={7} rad={1.4} roof={ROOF} wall={CASTLE} glow="#ff4a3a" crenel />
       <Box p={[1.8, 2.6, -4.2]} s={[9, 6.2, 1.2]} mat={M(CASTLE, { tx: 'bricks', rx: 5, ry: 3, bump: 2 })} />
       <Box p={[12, 2.6, -4.2]} s={[8, 6.2, 1.2]} mat={M(CASTLE, { tx: 'bricks', rx: 5, ry: 3, bump: 2 })} />
-      <Hill p={[-9, -1.5, 4]} s={[6, 4, 12]} color="#1c1a22" />
-      <Hill p={[23, -1.5, 6]} s={[6, 3.5, 12]} color="#1c1a22" />
+      <Hill p={[-9, -1.5, 4]} s={[6, 4, 12]} color="#6aa050" />
+      <Hill p={[23, -1.5, 6]} s={[6, 3.5, 12]} color="#6aa050" />
 
       <Gargoyle p={[11.2, -0.5, 13.2]} r={0.3} />
       <Gargoyle p={[14.6, -0.5, 13.2]} r={-0.3} />
@@ -49,17 +49,17 @@ function Outside() {
       <Gravestone p={[5, -0.5, 15.8]} r={-0.1} color="#6a6474" />
       <Gravestone p={[7.2, -0.5, 14.3]} r={0.1} kind={1} color="#6a6474" />
       <Gravestone p={[17.2, -0.5, 12]} r={-1.5} color="#6a6474" />
-      <DeadTree p={[17, -0.5, 1.5]} s={1.5} color="#241a1e" />
-      <DeadTree p={[0.5, -0.5, 19]} s={1.3} color="#241a1e" />
-      <DeadTree p={[17.5, -0.5, 16]} s={1.1} color="#241a1e" />
-      <Bush p={[9.4, -0.5, 14]} s={0.9} color="#20302a" flowers="#b3122e" />
-      <Bush p={[16, -0.5, 8]} s={1.1} color="#20302a" flowers="#b3122e" />
-      <Bush p={[0.5, -0.5, 13.6]} s={1.1} color="#20302a" flowers="#b3122e" />
+      <DeadTree p={[17, -0.5, 1.5]} s={1.5} color="#5a3a30" />
+      <DeadTree p={[0.5, -0.5, 19]} s={1.3} color="#5a3a30" />
+      <DeadTree p={[17.5, -0.5, 16]} s={1.1} color="#5a3a30" />
+      <Bush p={[9.4, -0.5, 14]} s={0.9} color="#3f8a44" flowers="#b3122e" />
+      <Bush p={[16, -0.5, 8]} s={1.1} color="#3f8a44" flowers="#b3122e" />
+      <Bush p={[0.5, -0.5, 13.6]} s={1.1} color="#3f8a44" flowers="#b3122e" />
       <Fence from={[-1, 19.6]} to={[11.6, 19.6]} count={13} spikes />
       <Fence from={[18.6, 3]} to={[18.6, 18]} count={12} spikes />
       <PoleTorch p={[11.2, -0.5, 16.5]} />
       <PoleTorch p={[14.6, -0.5, 16.5]} />
-      <Rock p={[4, -0.3, 18]} rad={0.7} sc={[1.3, 0.8, 1]} c="#35323c" />
+      <Rock p={[4, -0.3, 18]} rad={0.7} sc={[1.3, 0.8, 1]} c="#9a94a4" />
     </group>
   );
 }
@@ -135,7 +135,7 @@ function RoseGarden({ level }) {
     <group>
       <Box p={[0, 0.08, 0]} s={[3, 0.16, 2.4]} mat={M('#3a3440', { tx: 'bricks', bump: 2 })} />
       {Array.from({ length: 2 + level }, (_, i) => (
-        <Bush key={i} p={[(i % 3 - 1) * 0.9, 0.12, Math.floor(i / 3) * 0.9 - 0.4]} s={0.6} color="#1a2a22" flowers="#8a0015" />
+        <Bush key={i} p={[(i % 3 - 1) * 0.9, 0.12, Math.floor(i / 3) * 0.9 - 0.4]} s={0.6} color="#3f8a44" flowers="#8a0015" />
       ))}
     </group>
   );

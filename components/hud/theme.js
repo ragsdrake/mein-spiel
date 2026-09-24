@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const FONT = 'LilitaOne_400Regular';
 
 export const C = {
-  panel:     'rgba(18, 12, 34, 0.86)',
+  panel:     'rgba(22, 30, 64, 0.78)',
   panelSolid:'#1d1535',
   card:      '#2a1f48',
   cardLight: '#382a5e',
@@ -15,7 +15,7 @@ export const C = {
   red:       '#ff5a5a',
   orange:    '#ff8a2e',
   white:     '#ffffff',
-  muted:     '#a99cc9',
+  muted:     '#b8c4f0',
 };
 
 /** Glossy two-stop gradients for buttons, keyed by purpose. */
@@ -28,8 +28,8 @@ export const GRAD = {
   teal:   ['#4fe0d0', '#1f8a86'],
   orange: ['#ffa35a', '#d0561a'],
   grey:   ['#5a5478', '#3a3458'],
-  panel:  ['rgba(46, 34, 82, 0.96)', 'rgba(22, 15, 42, 0.97)'],
-  card:   ['#352862', '#241a44'],
+  panel:  ['#35478c', '#243168'],
+  card:   ['#4257a6', '#34468a'],
 };
 
 /** Chunky outlined game text, like the reference screenshot. */

@@ -5,9 +5,12 @@
  * exterior module of the active hotel.
  */
 
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
-import { ATTRACTION_SPOTS, P, ROOMS, barStools } from '../../game/config';
+import {
+  ATTRACTION_SPOTS, BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
+  receptionUpgradeCost, roomUpgradeCost,
+} from '../../game/config';
 import { tapRoom, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
@@ -17,6 +20,40 @@ import { Candelabra, Candle, Cobweb, GOLD, Padlock, Painting, Table, Torch, Wind
 import { Ball, Blob, Box, Cyl, Halo, M, Rock, Sprite, rand } from './primitives';
 import { useTheme } from './theme';
 
+// ─── tap targets & upgrade markers ──────────────────────────────────────────
+const MARKER_GREEN = M('#2ecc5a', { smooth: true, rough: 0.5 });
+const MARKER_WHITE = M('#ffffff', { rough: 0.6 });
+
+/** Floating green "upgrade available" badge, always facing the camera. */
+function UpgradeMarker({ p, onPress }) {
+  const ref = useRef();
+  const { camera } = useThree();
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    ref.current.quaternion.copy(camera.quaternion);
+    ref.current.position.y = p[1] + Math.abs(Math.sin(clock.elapsedTime * 3 + p[0])) * 0.18;
+  });
+  return (
+    <group ref={ref} position={p} onClick={(e) => { e.stopPropagation(); onPress(); }}>
+      <Cyl rt={0.34} h={0.08} seg={20} r={[Math.PI / 2, 0, 0]} mat={MARKER_GREEN} cast={false} />
+      <Box p={[0, -0.07, 0.06]} s={[0.12, 0.24, 0.03]} mat={MARKER_WHITE} cast={false} />
+      <mesh position={[0, 0.1, 0.06]} material={MARKER_WHITE}>
+        <coneGeometry args={[0.17, 0.18, 3]} />
+      </mesh>
+      <mesh visible={false}><sphereGeometry args={[0.6, 6, 4]} /></mesh>
+    </group>
+  );
+}
+
+/** Invisible, flat tap area on the floor of a station. */
+function TapArea({ p, s, onPress }) {
+  return (
+    <mesh position={p} visible={false} onClick={(e) => { e.stopPropagation(); onPress(); }}>
+      <boxGeometry args={s} />
+    </mesh>
+  );
+}
+
 // ─── guest room ──────────────────────────────────────────────────────────────
 function Room({ index }) {
   const theme = useTheme();
@@ -25,7 +62,12 @@ function Room({ index }) {
   const prevUnlocked = useHotel(s => index === 0 || s.hotels[s.activeHotel].rooms[index - 1] > 0);
   const hasCleaner = useHotel(s => s.hotels[s.activeHotel].staff.cleaner > 0);
   const dirty = useSim(s => s.dirty[index]);
-  const openSheet = useUi(s => s.openSheet);
+  const openUpgrade = useUi(s => s.openUpgrade);
+  const affordable = useHotel(s => {
+    const lvl = s.hotels[s.activeHotel].rooms[index];
+    return lvl > 0 && lvl < ROOM_MAX_LEVEL && s.coins >= roomUpgradeCost(index, lvl, s.activeDef().pm);
+  });
+  const open = () => openUpgrade('room', index);
   const def = ROOMS[index];
   const [cx, cz] = def.center;
 
@@ -38,7 +80,7 @@ function Room({ index }) {
           <Box p={[-0.2, 0.8, -0.6]} s={[0.4, 0.4, 0.4]} r={[0, 0.7, 0]} mat={M('#8a603f', { tx: 'planks', bump: 1 })} />
           <Cobweb p={[0.9, 1.1, -1.35]} r={[0, 0, Math.PI / 4]} />
           <Cobweb p={[-1.2, 1.2, -1.35]} r={[0, 0, -Math.PI / 5]} s={0.7} />
-          {prevUnlocked && <Padlock p={[0, 1.5, 0]} onPress={() => openSheet('rooms', index)} />}
+          {prevUnlocked && <Padlock p={[0, 1.5, 0]} onPress={open} />}
         </group>
       ) : (
         <group>
@@ -71,6 +113,8 @@ function Room({ index }) {
             </group>
           )}
           {dirty && <Puddle index={index} showHint={!hasCleaner} color={palette.slime} />}
+          <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
+          {affordable && !dirty && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
         </group>
       )}
     </group>
@@ -213,6 +257,12 @@ function Stairs() {
 // ─── reception ───────────────────────────────────────────────────────────────
 function Reception() {
   const { palette } = useTheme();
+  const openUpgrade = useUi(s => s.openUpgrade);
+  const affordable = useHotel(s => {
+    const lvl = s.hotels[s.activeHotel].receptionLevel;
+    return lvl < RECEPTION_MAX_LEVEL && s.coins >= receptionUpgradeCost(lvl, s.activeDef().pm);
+  });
+  const open = () => openUpgrade('reception');
   const wood = M(palette.wood, { tx: 'planks', rx: 1, ry: 2, bump: 1 });
   return (
     <group>
@@ -233,6 +283,8 @@ function Reception() {
         )))}
       </group>
       <Halo p={[10.2, 0.04, 9.6]} size={3.5} color={palette.warm} opacity={0.18} />
+      <TapArea p={[9.6, 0.6, 9.6]} s={[1.6, 1.2, 2.8]} onPress={open} />
+      {affordable && <UpgradeMarker p={[10, 2.4, 9.6]} onPress={open} />}
     </group>
   );
 }
@@ -241,7 +293,12 @@ function Reception() {
 function Bar({ Ext }) {
   const { palette } = useTheme();
   const level = useHotel(s => s.hotels[s.activeHotel].barLevel);
-  const openSheet = useUi(s => s.openSheet);
+  const openUpgrade = useUi(s => s.openUpgrade);
+  const affordable = useHotel(s => {
+    const lvl = s.hotels[s.activeHotel].barLevel;
+    return lvl > 0 && lvl < BAR_MAX_LEVEL && s.coins >= barUpgradeCost(lvl, s.activeDef().pm);
+  });
+  const open = () => openUpgrade('bar');
   const stools = level > 0 ? barStools(level) : 0;
   const wood = M(palette.wood, { tx: 'planks', rx: 4, bump: 1 });
   const top = M(palette.trim, { rough: 0.3, metal: 0.1 });
@@ -257,7 +314,7 @@ function Bar({ Ext }) {
       {level === 0 ? (
         <group>
           <Box p={[6.9, 1.2, 5.3]} s={[4.7, 0.2, 1.05]} mat={M('#a9a3b3', { tx: 'fabric' })} />
-          <Padlock p={[6.9, 2.1, 5.3]} onPress={() => openSheet('ops')} />
+          <Padlock p={[6.9, 2.1, 5.3]} onPress={open} />
         </group>
       ) : (
         <group>
@@ -274,6 +331,8 @@ function Bar({ Ext }) {
         </group>
       )}
 
+      <TapArea p={[7.2, 0.6, 5.1]} s={[5.2, 1.2, 1.4]} onPress={open} />
+      {affordable && <UpgradeMarker p={[7.2, 2.2, 5.3]} onPress={open} />}
       {P.stools.slice(0, stools).map(([x, z]) => (
         <group key={x} position={[x, 0, z]}>
           <Cyl p={[0, 0.3, 0]} rt={0.05} h={0.6} seg={6} mat={M('#2c2433', { metal: 0.6, rough: 0.4 })} />

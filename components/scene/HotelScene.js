@@ -62,38 +62,29 @@ function Lights({ shadows, lights }) {
     l.userData.base = base;
     lights.current[i] = l;
   };
+  // Bright, high-key "tycoon" lighting: a strong sky fill plus one sun that
+  // casts crisp shadows. Colours stay clean and saturated (no tone mapping).
   return (
     <group>
-      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 1.0]} />
-      <ambientLight color={palette.ambient} intensity={0.45} />
-      {/* cool moonlight key */}
+      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 1.9]} />
       <directionalLight
-        position={[-14, 26, -6]}
-        intensity={0.9}
-        color={palette.moon}
-      />
-      {/* warm fill that casts the soft shadows */}
-      <directionalLight
-        position={[18, 26, 12]}
-        intensity={1.5}
+        position={[16, 30, 10]}
+        intensity={2.1}
         color={palette.key}
         castShadow={shadows}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
+        shadow-camera-left={-22}
+        shadow-camera-right={22}
+        shadow-camera-top={22}
+        shadow-camera-bottom={-22}
         shadow-camera-near={1}
         shadow-camera-far={90}
         shadow-bias={-0.0012}
         shadow-normalBias={0.03}
-        shadow-radius={4}
+        shadow-radius={2}
       />
-      <pointLight ref={reg(0, 16)} position={[6.5, 2.2, 10]} color={palette.warm} intensity={16} distance={9} decay={1.6} />
-      <pointLight ref={reg(1, 11)} position={[10.5, 2.2, 9.6]} color={palette.warm} intensity={11} distance={7} decay={1.6} />
-      <pointLight ref={reg(2, 10)} position={[8.4, 1.8, 4.3]} color={palette.accentLight} intensity={10} distance={6} decay={1.6} />
-      <pointLight ref={reg(3, 12)} position={[12.8, 2, 13]} color={palette.warm} intensity={12} distance={8} decay={1.6} />
-      <pointLight ref={reg(4, 9)} position={[3, 2.6, 2.5]} color={palette.windowGlow} intensity={9} distance={8} decay={1.6} />
+      <pointLight ref={reg(0, 3)} position={[6.5, 2.2, 10]} color={palette.warm} intensity={3} distance={6} decay={1.6} />
+      <pointLight ref={reg(1, 3)} position={[8.4, 1.8, 4.3]} color={palette.accentLight} intensity={3} distance={5} decay={1.6} />
     </group>
   );
 }
@@ -105,7 +96,7 @@ function World({ hotelId, quality }) {
   return (
     <ThemeContext.Provider value={def}>
       <color attach="background" args={[def.palette.bg]} />
-      <fog attach="fog" args={[def.palette.fog, 80, 150]} />
+      <fog attach="fog" args={[def.palette.fog, 95, 170]} />
       <CameraRig key={hotelId} lights={lights} />
       <Lights shadows={q.shadows} lights={lights} />
       <Sky />
@@ -130,6 +121,7 @@ export default function HotelScene() {
       <Canvas
         key={quality}
         orthographic
+        flat
         dpr={dpr}
         shadows={q.shadows ? { type: PCFSoftShadowMap } : false}
         gl={{ antialias: !q.post, powerPreference: 'high-performance' }}

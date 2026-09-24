@@ -11,7 +11,9 @@ import Animated, { FadeIn, FadeInDown, FadeOut, ZoomIn } from 'react-native-rean
 import { GEMS_PER_STAR } from '../../game/config';
 import { fmt, fmtDuration } from '../../game/format';
 import { getHotel } from '../../game/hotels';
+import { AD_PLACEMENTS, finishAd, showRewardedAd } from '../../game/ads';
 import { dismissNightSummary, useSim } from '../../game/sim';
+import useUi from '../../game/ui';
 import useHotel from '../../game/store';
 import GameButton from './GameButton';
 import { C, GRAD } from './theme';
@@ -49,6 +51,7 @@ export function OfflinePopup() {
   const offline = useHotel(s => s.offline);
   const gems = useHotel(s => s.gems);
   const collect = useHotel(s => s.collectOffline);
+  const collectAd = useHotel(s => s.collectOfflineAd);
   if (!offline) return null;
   const parts = offline.perHotel.filter(([, a]) => a > 0);
   return (
@@ -59,7 +62,9 @@ export function OfflinePopup() {
       actions={(
         <>
           <Btn label="Einsammeln" onPress={() => collect(false)} />
-          <Btn label="×2 für 5" icon="diamond-stone" grad="purple" disabled={gems < 5} onPress={() => collect(true)} />
+          <Btn label="×2" icon="movie-open-play" grad="blue"
+            onPress={async () => { if (await showRewardedAd('offline')) collectAd(); }} />
+          <Btn label="×2" icon="diamond-stone" grad="purple" disabled={gems < 5} onPress={() => collect(true)} />
         </>
       )}
     >
@@ -74,6 +79,36 @@ export function OfflinePopup() {
         <Txt key={id} size={13} color={C.muted}>{getHotel(id).short}: +{fmt(a)}</Txt>
       ))}
     </Dialog>
+  );
+}
+
+/**
+ * Placeholder for a rewarded video (see game/ads.js). Counts down like a real
+ * ad; closing early forfeits the reward. Replaced by AdMob in a dev build.
+ */
+export function AdOverlay() {
+  const ad = useUi(s => s.ad);
+  const [left, setLeft] = useState(3);
+  useEffect(() => {
+    if (!ad) return undefined;
+    setLeft(3);
+    const t = setInterval(() => setLeft(l => {
+      if (l <= 1) { clearInterval(t); setTimeout(() => finishAd(true), 0); return 0; }
+      return l - 1;
+    }), 1000);
+    return () => clearInterval(t);
+  }, [ad]);
+  if (!ad) return null;
+  return (
+    <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.ad}>
+      <Icon name="movie-open-play" size={64} color="#fff" />
+      <Txt size={22}>Werbung (Platzhalter)</Txt>
+      <Txt size={15} color={C.muted}>Belohnung: {AD_PLACEMENTS[ad.placement] ?? ad.placement}</Txt>
+      <Txt size={40} color={C.gold}>{left}</Txt>
+      <Pressable onPress={() => finishAd(false)} style={styles.adClose} hitSlop={10}>
+        <Icon name="close" size={22} color="#fff" />
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -188,7 +223,7 @@ const styles = StyleSheet.create({
   body: { marginVertical: 14, gap: 6, alignItems: 'center' },
   amount: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   actions: { flexDirection: 'row', gap: 10 },
-  btn: { minWidth: 120 },
+  btn: { minWidth: 88 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
   toast: {
     position: 'absolute', top: '40%', alignSelf: 'center', flexDirection: 'row', alignItems: 'center',
@@ -196,6 +231,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   transition: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  ad: {
+    ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center',
+    justifyContent: 'center', gap: 10,
+  },
+  adClose: { position: 'absolute', top: 50, right: 20 },
   transitionInner: { alignItems: 'center', gap: 6, paddingHorizontal: 24 },
   hint: {
     position: 'absolute', left: 12, right: 12, bottom: 100, flexDirection: 'row', alignItems: 'center',

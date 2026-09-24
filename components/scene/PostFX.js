@@ -1,14 +1,11 @@
 /**
- * Cinematic post-processing ("Ultra" quality): bloom on everything that
- * glows, ACES tone mapping, subtle vignette and SMAA anti-aliasing.
+ * Post-processing for "Ultra" quality: a light bloom on real light sources
+ * and SMAA anti-aliasing (the flat tycoon look uses no tone mapping).
  * Takes over rendering from react-three-fiber while mounted.
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
-import {
-  BloomEffect, EffectComposer, EffectPass, HueSaturationEffect, RenderPass, SMAAEffect,
-  ToneMappingEffect, ToneMappingMode, VignetteEffect,
-} from 'postprocessing';
+import { BloomEffect, EffectComposer, EffectPass, RenderPass, SMAAEffect } from 'postprocessing';
 import { useEffect, useMemo } from 'react';
 import { HalfFloatType, NoToneMapping } from 'three';
 
@@ -20,10 +17,8 @@ export default function PostFX() {
     c.addPass(new RenderPass(scene, camera));
     c.addPass(new EffectPass(
       camera,
-      new BloomEffect({ mipmapBlur: true, luminanceThreshold: 0.8, luminanceSmoothing: 0.2, intensity: 1.25, radius: 0.72 }),
-      new HueSaturationEffect({ saturation: 0.12 }),
-      new ToneMappingEffect({ mode: ToneMappingMode.ACES_FILMIC }),
-      new VignetteEffect({ offset: 0.32, darkness: 0.62 }),
+      // only real light sources (emissive > 1) glow; the rest stays crisp and flat
+      new BloomEffect({ mipmapBlur: true, luminanceThreshold: 1.05, luminanceSmoothing: 0.1, intensity: 0.6, radius: 0.6 }),
       new SMAAEffect(),
     ));
     return c;

@@ -60,7 +60,7 @@ export function Pumpkin({ p, s = 1 }) {
   );
 }
 
-export function DeadTree({ p, s = 1, color = '#3b2a2f' }) {
+export function DeadTree({ p, s = 1, color = '#6a4a3a' }) {
   const bark = M(color, { tx: 'planks', bump: 1.5 });
   return (
     <group position={p} scale={s}>
@@ -74,7 +74,7 @@ export function DeadTree({ p, s = 1, color = '#3b2a2f' }) {
   );
 }
 
-export function Bush({ p, s = 1, color = '#2f5a3f', flowers }) {
+export function Bush({ p, s = 1, color = '#3f9a4a', flowers }) {
   return (
     <group position={p} scale={s}>
       <Rock p={[0, 0.35, 0]} rad={0.55} sc={[1.2, 0.8, 1]} mat={M(color)} detail={1} />
@@ -147,7 +147,7 @@ export function Tower({ p, h = 8, rad = 1.6, roof = '#5a2a3a', wall = '#6d6878',
   );
 }
 
-export function Hill({ p, s = [6, 2, 6], color = '#1d2a24' }) {
+export function Hill({ p, s = [6, 2, 6], color = '#58ae4c' }) {
   return <Rock p={p} rad={1} sc={s} mat={M(color, { tx: 'stone', bump: 1 })} detail={1} />;
 }
 

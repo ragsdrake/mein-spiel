@@ -20,10 +20,12 @@ import { HOTELS, getHotel } from '../../game/hotels';
 import { QUEST_KINDS, questDone, questProgress } from '../../game/quests';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
+import { showRewardedAd } from '../../game/ads';
 import { QUALITY } from '../../game/quality';
 import GameButton from './GameButton';
 import { C, GRAD } from './theme';
 import Txt from './Txt';
+import UpgradeCard from './UpgradeCard';
 
 export const SHEETS = {
   rooms:    { title: 'Zimmer',    icon: 'bed-king' },
@@ -350,11 +352,39 @@ function GuestsTab() {
 }
 
 function ShopTab() {
+  const adChest = useHotel(s => s.adChest);
+  const adBoost = useHotel(s => s.adBoost);
   const buyBoost = useHotel(s => s.buyBoost);
   const buyInstant = useHotel(s => s.buyInstant);
   const instant = useHotel(s => s.instantIncome());
   return (
     <>
+      <Section title="Gratis" />
+      <Row
+        icon="treasure-chest"
+        iconColor={C.gold}
+        title="Gratis-Truhe"
+        subtitle="Video ansehen: 10 Minuten Einnahmen sofort"
+        right={(
+          <GameButton grad="blue" style={styles.buy} onPress={async () => { if (await showRewardedAd('chest')) adChest(); }}>
+            <Icon name="movie-open-play" size={20} color={C.white} />
+            <Txt size={12}>Ansehen</Txt>
+          </GameButton>
+        )}
+      />
+      <Row
+        icon="cash-multiple"
+        iconColor={C.green}
+        title="Einnahmen ×2"
+        subtitle="Video ansehen: +4 Minuten, bis zu 4 Stunden stapelbar"
+        right={(
+          <GameButton grad="blue" style={styles.buy} onPress={async () => { if (await showRewardedAd('boost')) adBoost(); }}>
+            <Icon name="movie-open-play" size={20} color={C.white} />
+            <Txt size={12}>Ansehen</Txt>
+          </GameButton>
+        )}
+      />
+      <Section title="Mit Kristallen" />
       <Row
         icon="timer-sand"
         iconColor={C.gold}
@@ -426,6 +456,16 @@ export default function BuildSheet() {
   const focus = useUi(s => s.focusRoom);
   const closeSheet = useUi(s => s.closeSheet);
   const hotelName = useHotel(s => s.activeDef().short);
+  if (sheet === 'upgrade') {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Pressable style={styles.backdrop} onPress={closeSheet} />
+        <Animated.View entering={SlideInDown.duration(220)} exiting={SlideOutDown.duration(160)} style={styles.cardWrap}>
+          <UpgradeCard />
+        </Animated.View>
+      </View>
+    );
+  }
   if (!sheet || !SHEETS[sheet]) return null;
   const meta = SHEETS[sheet];
   const View_ = TAB_VIEWS[sheet];
@@ -461,6 +501,7 @@ const styles = StyleSheet.create({
     paddingBottom: 18, overflow: 'hidden',
   },
   sheetBg: { borderTopLeftRadius: 22, borderTopRightRadius: 22 },
+  cardWrap: { position: 'absolute', left: 8, right: 8, bottom: 14 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingTop: 12, paddingBottom: 4 },
   headerIcon: {
     width: 40, height: 40, borderRadius: 12, backgroundColor: C.cardLight,

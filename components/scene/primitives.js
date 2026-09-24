@@ -1,7 +1,7 @@
 /**
  * Low-poly building blocks. Materials are cached per look so the whole hotel
  * shares a handful of GPU programs. Surfaces can carry a procedural texture
- * (`tx`) that is also used as bump map for real depth in the light.
+ * (`tx`, only the crisp clean-* patterns are applied for the flat tycoon look).
  */
 
 import { AdditiveBlending, Color, MeshBasicMaterial, MeshStandardMaterial, SpriteMaterial } from 'three';
@@ -13,7 +13,7 @@ const cache = new Map();
  * Shared material.
  *  - `emissive`/`intensity`: glow (values > 1 bloom on high quality)
  *  - `tx`, `rx`, `ry`:       procedural texture + repeat
- *  - `bump`:                 bump strength of that texture
+ *  - `bump`:                 kept for API compatibility (ignored in the flat look)
  *  - `smooth`:               smooth instead of flat shading
  */
 export function M(color, opts = {}) {
@@ -25,7 +25,7 @@ export function M(color, opts = {}) {
   if (!m) {
     m = new MeshStandardMaterial({
       color,
-      flatShading:  !smooth && !tx,
+      flatShading:  !smooth,
       roughness:    rough,
       metalness:    metal,
       emissive:     emissive ?? '#000000',
@@ -34,13 +34,9 @@ export function M(color, opts = {}) {
       opacity:      opacity ?? 1,
       depthWrite:   opacity == null || opacity > 0.6,
     });
-    if (tx) {
-      m.map = tex(tx, rx, ry);
-      if (bump) {
-        m.bumpMap = m.map;
-        m.bumpScale = bump;
-      }
-    }
+    // Flat "Codigames" look: only the crisp clean-* patterns are used, no noisy
+    // detail textures and no bump — surfaces read as clean coloured shapes.
+    if (tx && tx.startsWith('clean')) m.map = tex(tx, rx, ry);
     cache.set(key, m);
   }
   return m;

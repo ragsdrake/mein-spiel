@@ -1,12 +1,12 @@
 /**
- * Atmosphere: themed particles (wisps, embers, sand, snow), indoor dust motes,
- * drifting ground fog and a flock of bats at Burg Dracula.
+ * Atmosphere: themed particles (wisps, embers, sand, snow) and a flock of
+ * bats at Burg Dracula.
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Color, MeshBasicMaterial, PointsMaterial,
+  AdditiveBlending, BufferAttribute, BufferGeometry, Color, PointsMaterial,
 } from 'three';
 import { Ball, Box } from './primitives';
 import { tex } from './textures';
@@ -16,8 +16,8 @@ import { useTheme } from './theme';
  * kind → spawn box [x0, x1, y0, y1, z0, z1], velocity, colours, size (px).
  */
 const KINDS = {
-  wisps:  { box: [-2, 20, 0, 4, -2, 20], vel: [0, 0.15, 0], wobble: 0.6, colors: ['#6dff9e', '#c58bff', '#8fe3ff'], size: 7, count: 60 },
-  embers: { box: [-4, 20, -1, 6, -4, 20], vel: [0.1, 0.5, 0], wobble: 0.3, colors: ['#ff4a2a', '#ffb347', '#ff2a4a'], size: 5, count: 70 },
+  wisps:  { box: [-2, 20, 0, 4, 12, 22], vel: [0, 0.15, 0], wobble: 0.6, colors: ['#6dff9e', '#c58bff', '#8fe3ff'], size: 4, count: 30 },
+  embers: { box: [-4, 20, -1, 6, -4, 20], vel: [0.1, 0.5, 0], wobble: 0.3, colors: ['#ff4a2a', '#ffb347', '#ff2a4a'], size: 3, count: 30 },
   sand:   { box: [-6, 22, 0, 5, -4, 22], vel: [1.4, 0.05, 0.4], wobble: 0.2, colors: ['#e0a050', '#c08040', '#ffcf6b'], size: 3, count: 70 },
   snow:   { box: [-6, 22, 0, 12, -6, 22], vel: [0.25, -0.9, 0.1], wobble: 0.35, colors: ['#ffffff', '#dff4ff', '#bfe8ff'], size: 5, count: 180 },
   dust:   { box: [1, 13, 0.3, 3.2, 1, 11], vel: [0.02, 0.04, 0], wobble: 0.15, colors: ['#ffd9a0', '#ffe8c0'], size: 3, count: 50 },
@@ -83,35 +83,6 @@ function Field({ kind, density }) {
   return <points geometry={geom} material={mat} frustumCulled={false} renderOrder={4} />;
 }
 
-/** Big soft fog sheets drifting over the garden. */
-function GroundFog({ color, opacity }) {
-  const group = useRef();
-  const mat = useMemo(() => new MeshBasicMaterial({
-    color, map: tex('fog'), transparent: true, opacity, depthWrite: false,
-  }), [color, opacity]);
-  const sheets = useMemo(() => [
-    [3, 15, 9], [10, 18, 11], [17, 10, 9], [-2, 8, 10], [7, 21, 12], [16, 1, 8],
-  ], []);
-  useFrame(({ clock }) => {
-    if (!group.current) return;
-    group.current.children.forEach((m, i) => {
-      const [x, z] = sheets[i];
-      m.position.x = x + Math.sin(clock.elapsedTime * 0.07 + i) * 2;
-      m.position.z = z + Math.cos(clock.elapsedTime * 0.05 + i * 2) * 1.5;
-      m.rotation.z = clock.elapsedTime * 0.02 * (i % 2 ? 1 : -1);
-    });
-  });
-  return (
-    <group ref={group}>
-      {sheets.map(([x, z, s], i) => (
-        <mesh key={i} position={[x, -0.35 + (i % 3) * 0.12, z]} rotation={[-Math.PI / 2, 0, 0]} material={mat} renderOrder={2}>
-          <planeGeometry args={[s, s]} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function BatFlock({ count }) {
   const group = useRef();
   const bats = useMemo(() => Array.from({ length: count }, (_, i) => ({
@@ -149,11 +120,6 @@ export default function Particles({ density = 1 }) {
   return (
     <group>
       <Field kind={THEME_KIND[palette.particles] ?? 'wisps'} density={density} />
-      <Field kind="dust" density={density} />
-      <GroundFog
-        color={palette.particles === 'sand' ? '#c0a070' : palette.particles === 'snow' ? '#9fc4e0' : '#9888d8'}
-        opacity={palette.particles === 'snow' ? 0.12 : 0.2}
-      />
       {palette.particles === 'bats' && <BatFlock count={Math.round(12 * density)} />}
     </group>
   );

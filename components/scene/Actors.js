@@ -9,7 +9,7 @@ import { P } from '../../game/config';
 import { getGuestDef } from '../../game/hotels';
 import { sim, tapGuest, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
-import Character, { FLOATING } from './Characters';
+import Character, { FLOATING } from './Blocky';
 import { Ball, Blob, Box, Cyl, M, Sprite, Torus } from './primitives';
 import { useTheme } from './theme';
 
@@ -76,7 +76,9 @@ function GuestActor({ id }) {
   const floats = FLOATING.has(def.model);
   const root = useRef();
   const body = useRef();
+  const lie = useRef();
   const bubble = useRef();
+  const motion = useRef({ moving: false, phase: g?.phase ?? 0 });
   const refs = { checkin: useRef(), drink: useRef(), zzz: useRef(), tip: useRef() };
 
   useFrame(({ clock, camera }) => {
@@ -87,9 +89,10 @@ function GuestActor({ id }) {
     const atBar = guest.state === 'drink' || guest.state === 'waitDrink' || guest.state === 'serve';
     const moving = guest.path.length > 0;
 
+    motion.current.moving = moving && !floats;
     const y = floats
       ? (sleeping ? 0.55 : atBar ? 0.35 : 0.25) + Math.sin(t * 2.2) * 0.08
-      : (sleeping ? 0.5 : atBar ? 0.3 : 0) + (moving ? Math.abs(Math.sin(t * 9)) * 0.06 : 0);
+      : (sleeping ? 0.58 : atBar ? 0.3 : 0) + (moving ? Math.abs(Math.sin(t * 11)) * 0.03 : 0);
     root.current.position.set(guest.pos[0], y, guest.pos[1]);
     const s = easeOutBack(Math.max(0, Math.min(1, guest.alpha)));
     root.current.scale.setScalar(Math.max(0.001, s));
@@ -98,9 +101,11 @@ function GuestActor({ id }) {
     let diff = guest.facing - cur;
     diff = Math.atan2(Math.sin(diff), Math.cos(diff));
     body.current.rotation.y = cur + diff * 0.15;
-    body.current.rotation.z = floats
-      ? (sleeping ? Math.sin(t) * 0.08 : Math.sin(t * 2.2) * 0.05)
-      : (moving ? Math.sin(t * 9) * 0.07 : 0);
+    body.current.rotation.z = floats ? (sleeping ? Math.sin(t) * 0.08 : Math.sin(t * 2.2) * 0.05) : 0;
+    // walkers lie down in their bed (head towards the pillow)
+    const lying = sleeping && !floats;
+    lie.current.rotation.x = lying ? -Math.PI / 2 : 0;
+    lie.current.position.z = lying ? 0.55 : 0;
 
     bubble.current.quaternion.copy(camera.quaternion);
     bubble.current.position.y = (floats ? 1.55 : 2.0) + Math.abs(Math.sin(t * 3)) * 0.12;
@@ -113,7 +118,9 @@ function GuestActor({ id }) {
   return (
     <group ref={root} onClick={(e) => { e.stopPropagation(); tapGuest(id); }}>
       <group ref={body}>
-        <Character def={def} />
+        <group ref={lie}>
+          <Character def={def} motion={motion} />
+        </group>
       </group>
       <Blob p={[0, floats ? -0.2 : 0.02, 0]} size={floats ? 0.8 : 0.9} />
       <group ref={bubble}>
@@ -162,8 +169,7 @@ function Idle({ p, face = 0, speed = 1.5, children }) {
   useFrame(({ clock }) => {
     if (!ref.current) return;
     const t = clock.elapsedTime * speed + p[0];
-    ref.current.position.y = Math.abs(Math.sin(t)) * 0.04;
-    ref.current.rotation.z = Math.sin(t) * 0.04;
+    ref.current.position.y = Math.abs(Math.sin(t)) * 0.03;
   });
   return (
     <group position={[p[0], 0, p[1]]} rotation={[0, face, 0]}>
@@ -176,6 +182,7 @@ function Idle({ p, face = 0, speed = 1.5, children }) {
 function CleanerActor({ def }) {
   const ref = useRef();
   const inner = useRef();
+  const motion = useRef({ moving: false, phase: 0 });
   useFrame(({ clock }) => {
     const c = sim.cleaner;
     if (!ref.current) return;
@@ -186,12 +193,13 @@ function CleanerActor({ def }) {
     ref.current.rotation.y = cur + diff * 0.12;
     const t = clock.elapsedTime;
     const moving = c.path.length > 0;
-    inner.current.rotation.z = moving ? Math.sin(t * 6) * 0.12 : c.working ? Math.sin(t * 10) * 0.08 : 0;
+    motion.current.moving = moving;
+    inner.current.rotation.z = c.working ? Math.sin(t * 10) * 0.08 : 0;
     inner.current.rotation.y = c.working ? Math.sin(t * 8) * 0.4 : 0;
   });
   return (
     <group ref={ref}>
-      <group ref={inner}><Character def={def} /></group>
+      <group ref={inner}><Character def={def} motion={motion} /></group>
       <Blob size={0.9} />
     </group>
   );

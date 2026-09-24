@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomBar from '../components/hud/BottomBar';
 import BuildSheet from '../components/hud/BuildSheet';
 import {
-  HotelTransition, NightSummaryToast, OfflinePopup, StarUpPopup, TutorialHint,
+  AdOverlay, HotelTransition, NightSummaryToast, OfflinePopup, StarUpPopup, TutorialHint,
 } from '../components/hud/Popups';
 import TopBar from '../components/hud/TopBar';
 import HotelScene from '../components/scene/HotelScene';
@@ -102,6 +102,7 @@ export default function GameScreen() {
       <HotelTransition />
       <StarUpPopup />
       <OfflinePopup />
+      <AdOverlay />
     </View>
   );
 }

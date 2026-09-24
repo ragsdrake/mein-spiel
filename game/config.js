@@ -80,6 +80,8 @@ export const TIP_SECONDS = 4.5;
 // ─── boost, gems & offline ───────────────────────────────────────────────────
 export const BOOST_COST_GEMS = 10;
 export const BOOST_SECONDS   = 5 * 60;
+export const AD_BOOST_SECONDS     = 4 * 60;
+export const AD_BOOST_CAP_SECONDS = 4 * 3600;
 export const INSTANT_COST_GEMS = 20;
 export const INSTANT_SECONDS   = 3600;
 export const OFFLINE_CAP_SECONDS = 8 * 3600;

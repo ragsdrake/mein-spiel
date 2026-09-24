@@ -35,6 +35,7 @@ export default function DevProbe() {
       });
       return pts;
     };
+    window.__project = (x, y, z) => toScreen(x, y, z);
     window.__debugState = () => {
       const { coins, gems, activeHotel, hotels, stats } = useHotel.getState();
       const { totalEarned, rooms, barLevel, staff, attractions } = hotels[activeHotel];

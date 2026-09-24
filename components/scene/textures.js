@@ -131,6 +131,40 @@ const PATTERNS = {
   },
 };
 
+// ─── clean patterns (Codigames-style flat look: no noise, crisp lines) ───────
+Object.assign(PATTERNS, {
+  cleanPlanks(u, v) {
+    const n = 4;
+    const idx = Math.floor(u * n);
+    const lu = u * n - idx;
+    const off = hash(idx, 7, 2);
+    const joint = Math.abs(((v + off) % 1) - 0.5) < 0.012;
+    const gap = lu < 0.03 || lu > 0.97;
+    return gap || joint ? 0.8 : 0.96 + hash(idx, 3, 1) * 0.04;
+  },
+  cleanTiles(u, v) {
+    const n = 2;
+    const iu = Math.floor(u * n);
+    const iv = Math.floor(v * n);
+    const lu = u * n - iu;
+    const lv = v * n - iv;
+    if (lu < 0.025 || lv < 0.025) return 0.84;
+    return (iu + iv) % 2 ? 1 : 0.95;
+  },
+  cleanGrass(u, v) {
+    const n = 2;
+    const iu = Math.floor(u * n);
+    const iv = Math.floor(v * n);
+    return (iu + iv) % 2 ? 1 : 0.95;
+  },
+  cleanSand(u, v) {
+    return 0.97 + (Math.sin((u + v) * Math.PI * 8) > 0.92 ? -0.04 : 0);
+  },
+  cleanSnow() {
+    return 1;
+  },
+});
+
 /** Soft alpha textures for glows, fog wisps and blob shadows. */
 const ALPHA_PATTERNS = {
   radial(u, v) {
