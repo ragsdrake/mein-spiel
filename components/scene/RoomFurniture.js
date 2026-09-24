@@ -247,7 +247,7 @@ const PLANS = [
 ];
 
 /** Furniture of one room for its layout, colours and level. */
-export function RoomInterior({ layout, index, level, pal, back = -1.5 }) {
+export function RoomInterior({ layout, index, level, pal, back = -1.5, lowBack = false }) {
   const plan = PLANS[layout];
   const { accent } = ROOM_COLORS[index % ROOM_COLORS.length];
   const [rx, rz, rw, rd] = plan.rug;
@@ -263,7 +263,7 @@ export function RoomInterior({ layout, index, level, pal, back = -1.5 }) {
           </group>
         );
       })}
-      {level >= 2 && <Painting p={[plan.painting[0], plan.painting[1], back + 0.07]} hue={accent} />}
+      {level >= 2 && !lowBack && <Painting p={[plan.painting[0], plan.painting[1], back + 0.07]} hue={accent} />}
       {level >= 10 && (
         <Ball p={[0, 2.3, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: pal.windowGlow, intensity: 0.8 })} />
       )}

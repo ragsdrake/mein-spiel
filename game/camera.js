@@ -5,7 +5,7 @@
  */
 export const cam = { x: 8.6, z: 8.4, zoom: 1 };
 
-export const CAM_BOUNDS = { minX: 2, maxX: 15, minZ: 2, maxZ: 17, minZoom: 0.7, maxZoom: 2.2 };
+export const CAM_BOUNDS = { minX: 2, maxX: 20, minZ: 2, maxZ: 17, minZoom: 0.7, maxZoom: 2.2 };
 
 /** World units visible across the screen width at zoom 1. */
 export const FIT_WIDTH = 17.5;

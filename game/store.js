@@ -13,7 +13,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   ATTRACTION_EFFECT, ATTRACTION_MAX_LEVEL, BAR_MAX_LEVEL, BOOST_COST_GEMS, BOOST_SECONDS,
   GEMS_PER_STAR, INSTANT_COST_GEMS, INSTANT_SECONDS, OFFLINE_CAP_SECONDS, OFFLINE_MIN_SECONDS,
-  PASSIVE_SHARE, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, STAFF_HIRE_COST, STAFF_MAX_LEVEL,
+  PASSIVE_SHARE, RECEPTION_MAX_LEVEL, ROOM_MAX_LEVEL, STAFF_HIRE_COST, STAFF_MAX_LEVEL,
   STAY_SECONDS, TIP_CHANCE, AD_BOOST_SECONDS, AD_BOOST_CAP_SECONDS, attractionCost, barUpgradeCost, drinkPrice, receptionUpgradeCost,
   roomPrice, roomUnlockCost, roomUpgradeCost, staffUpgradeCost, starsFor,
 } from './config';
@@ -22,7 +22,7 @@ import { makeQuest, questDone } from './quests';
 
 const makeHotelState = (id) => ({
   unlocked:       id === 'nachtruh',
-  rooms:          ROOMS.map((_, i) => (i === 0 ? 1 : 0)),   // 0 = locked, else level
+  rooms:          getHotel(id).rooms.map((_, i) => (i === 0 ? 1 : 0)),   // 0 = locked, else level
   barLevel:       0,                                         // 0 = locked
   receptionLevel: 1,
   staff:          { reception: 0, cleaner: 0, bar: 0 },      // 0 = not hired, else level
@@ -408,9 +408,12 @@ const useHotel = create(persist((set, get) => {
   /** Hotels or stats added later must appear in older saves too. */
   merge: (persisted, current) => {
     const merged = { ...current, ...persisted };
-    merged.hotels = Object.fromEntries(HOTELS.map(h => [
-      h.id, { ...makeHotelState(h.id), ...(persisted?.hotels?.[h.id] ?? {}) },
-    ]));
+    merged.hotels = Object.fromEntries(HOTELS.map(h => {
+      const hs = { ...makeHotelState(h.id), ...(persisted?.hotels?.[h.id] ?? {}) };
+      // hotels that grew a wing get their new (locked) rooms appended
+      hs.rooms = h.rooms.map((_, i) => hs.rooms[i] ?? 0);
+      return [h.id, hs];
+    }));
     merged.stats = { ...emptyStats(), ...(persisted?.stats ?? {}) };
     merged.settings = { ...current.settings, ...(persisted?.settings ?? {}) };
     return merged;

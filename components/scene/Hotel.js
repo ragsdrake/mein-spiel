@@ -8,12 +8,13 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import {
-  ATTRACTION_SPOTS, BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_LAYOUTS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
+  BAR_MAX_LEVEL, WING, attractionSpots, wingDepth, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_LAYOUTS, ROOM_MAX_LEVEL, barStools, barUpgradeCost,
   receptionUpgradeCost, roomUpgradeCost,
 } from '../../game/config';
 import { sim, tapRoom, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
+import { CleanBadge, UpgradeBadge } from './Badge';
 import Bed from './Beds';
 import EXTERIORS from './exteriors';
 import { ROOM_COLORS, RoomInterior } from './RoomFurniture';
@@ -23,8 +24,11 @@ import { Ball, Blob, Box, Cyl, Halo, M, Rock } from './primitives';
 import { useTheme } from './theme';
 
 // ─── tap targets & upgrade markers ──────────────────────────────────────────
-const MARKER_GREEN = M('#2ecc5a', { smooth: true, rough: 0.5 });
-const MARKER_WHITE = M('#ffffff', { rough: 0.6 });
+
+/** Billboard inside a possibly rotated parent: undo the parent, face the camera. */
+function faceCamera(obj, camera) {
+  obj.parent.getWorldQuaternion(obj.quaternion).invert().multiply(camera.quaternion);
+}
 
 /** Floating green "upgrade available" badge, always facing the camera. */
 function UpgradeMarker({ p, onPress }) {
@@ -32,16 +36,12 @@ function UpgradeMarker({ p, onPress }) {
   const { camera } = useThree();
   useFrame(({ clock }) => {
     if (!ref.current) return;
-    ref.current.quaternion.copy(camera.quaternion);
+    faceCamera(ref.current, camera);
     ref.current.position.y = p[1] + Math.abs(Math.sin(clock.elapsedTime * 3 + p[0])) * 0.18;
   });
   return (
     <group ref={ref} position={p} onClick={(e) => { e.stopPropagation(); onPress(); }}>
-      <Cyl rt={0.34} h={0.08} seg={20} r={[Math.PI / 2, 0, 0]} mat={MARKER_GREEN} cast={false} />
-      <Box p={[0, -0.07, 0.06]} s={[0.12, 0.24, 0.03]} mat={MARKER_WHITE} cast={false} />
-      <mesh position={[0, 0.1, 0.06]} material={MARKER_WHITE}>
-        <coneGeometry args={[0.17, 0.18, 3]} />
-      </mesh>
+      <UpgradeBadge />
       <mesh visible={false}><sphereGeometry args={[0.6, 6, 4]} /></mesh>
     </group>
   );
@@ -93,7 +93,7 @@ function Room({ index }) {
           <group position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]}>
             <Bed kind={theme.bed} level={level} />
           </group>
-          <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back} />
+          <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back} lowBack={def.side === 'right'} />
           {dirty && <Puddle index={index} p={L.clean} showHint={!hasCleaner} color={palette.slime} />}
           <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
           {affordable && !dirty && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
@@ -108,6 +108,7 @@ const DOOR_W = 0.8;
 const FRONT_H = 0.95;
 
 function RoomWalls({ index, def, doorX, back, span, locked }) {
+  const lowBack = def.side === 'right';
   const { palette } = useTheme();
   const leaf = useRef();
   const open = useRef(0);
@@ -144,8 +145,9 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
 
   return (
     <group>
-      {/* wallpaper + skirting in the room colour */}
-      <Box p={[(span[0] + span[1]) / 2, 1.3, back + 0.015]} s={[span[1] - span[0] - 0.3, 2.5, 0.03]} mat={M(paper)} cast={false} />
+      {/* wallpaper + skirting in the room colour (outer wing walls are low) */}
+      <Box p={[(span[0] + span[1]) / 2, lowBack ? 0.33 : 1.3, back + 0.015]}
+        s={[span[1] - span[0] - 0.3, lowBack ? 0.62 : 2.5, 0.03]} mat={M(paper)} cast={false} />
       <Box p={[(span[0] + span[1]) / 2, 0.12, back + 0.035]} s={[span[1] - span[0] - 0.3, 0.24, 0.03]} mat={M(accent)} cast={false} />
       {/* front wall with door gap */}
       {seg(span[0], gap0, 'l')}
@@ -176,8 +178,10 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
 
 function Puddle({ index, p, showHint, color }) {
   const hint = useRef();
-  useFrame(({ clock }) => {
-    if (hint.current) hint.current.position.y = 1.4 + Math.sin(clock.elapsedTime * 4) * 0.08;
+  useFrame(({ clock, camera }) => {
+    if (!hint.current) return;
+    hint.current.position.y = 1.4 + Math.sin(clock.elapsedTime * 4) * 0.08;
+    faceCamera(hint.current, camera);
   });
   const slime = M(color, { emissive: color, intensity: 0.8, opacity: 0.85, rough: 0.1 });
   const press = (e) => { e.stopPropagation(); tapRoom(index); };
@@ -190,9 +194,7 @@ function Puddle({ index, p, showHint, color }) {
       <Halo p={[0, 0.07, 0]} size={1.4} color={color} opacity={0.3} />
       {showHint && (
         <group ref={hint} position={[0, 1.4, 0]}>
-          <Ball rad={0.28} w={10} hs={8} mat={M('#ffffff', { emissive: '#ffffff', intensity: 0.3, smooth: true })} cast={false} />
-          <Box p={[0, 0.02, 0.2]} s={[0.05, 0.3, 0.05]} r={[0, 0, 0.5]} c="#8b5a33" cast={false} />
-          <Box p={[0.1, -0.13, 0.2]} s={[0.18, 0.1, 0.05]} r={[0, 0, 0.5]} c="#e0a33a" cast={false} />
+          <CleanBadge />
         </group>
       )}
       <mesh visible={false} position={[0, 0.6, 0]}>
@@ -216,7 +218,7 @@ const ZONES = [
 const WALL_H = 2.8;
 const WALL_T = 0.5;
 
-function Shell({ Ext }) {
+function Shell({ Ext, depth }) {
   const { palette } = useTheme();
   const wall = M(palette.wall);
   const cap = M(palette.wallTop);
@@ -246,7 +248,7 @@ function Shell({ Ext }) {
       <Box p={[0.02, 0.1, 6]} s={[0.05, 0.2, 12]} mat={base} cast={false} />
       {[5.2, 8.2, 10.9].map(z => <Window key={z} p={[0.03, 1.75, z]} r={[0, Math.PI / 2, 0]} />)}
 
-      {Ext.WallTop && <Ext.WallTop />}
+      {Ext.WallTop && <Ext.WallTop width={depth ? 20 : 14} />}
 
       {/* room dividers */}
       {[3.5, 6.5, 9.5, 12.5].map(x => (
@@ -265,8 +267,8 @@ function Shell({ Ext }) {
       {/* low front walls with the entrance gap (x 11.8 … 13.9) */}
       <Box p={[5.9, 0.35, 12.2]} s={[11.8, 0.7, 0.4]} mat={wall} />
       <Box p={[5.9, 0.73, 12.2]} s={[11.84, 0.06, 0.44]} mat={cap} />
-      <Box p={[14.2, 0.35, 6]} s={[0.4, 0.7, 12.4]} mat={wall} />
-      <Box p={[14.2, 0.73, 6]} s={[0.44, 0.06, 12.44]} mat={cap} />
+      <Box p={[14.2, 0.35, (depth + 12.2) / 2]} s={[0.4, 0.7, 12.4 - depth]} mat={wall} />
+      <Box p={[14.2, 0.73, (depth + 12.2) / 2]} s={[0.44, 0.06, 12.44 - depth]} mat={cap} />
       {[11.8, 13.95].map(x => (
         <group key={x}>
           <Box p={[x, 0.7, 12.2]} s={[0.4, 1.4, 0.4]} mat={wall} />
@@ -277,6 +279,64 @@ function Shell({ Ext }) {
       ))}
 
       <Stairs />
+    </group>
+  );
+}
+
+// ─── east wing of the bigger hotels ─────────────────────────────────────────
+function Wing({ depth }) {
+  const { palette } = useTheme();
+  const wall = M(palette.wall);
+  const cap = M(palette.wallTop);
+  const { x0, x1 } = WING;
+  const w = x1 - x0;
+  const full = depth > 8;
+  const zones = [
+    ['zoneRoom', 14, 17, 0, 3.2], ['zoneRoom', 17, 20, 0, 3.2],
+    ...(full ? [['zoneRoom', 16.8, 20, 4.5, 7.5], ['zoneRoom', 16.8, 20, 7.5, 10.5], ['zoneLounge', 14.3, 15.7, 4.8, 10.1]] : []),
+  ];
+  const divider = (p, s, key) => (
+    <group key={key}>
+      <Box p={p} s={s} mat={wall} />
+      <Box p={[p[0], 1.23, p[2]]} s={[s[0] + 0.04, 0.06, s[2] + 0.04]} mat={cap} />
+    </group>
+  );
+  return (
+    <group>
+      <Box p={[x0 + (w + 0.4) / 2, -0.45, depth / 2]} s={[w + 0.4, 0.7, depth + 0.8]} mat={wall} />
+      <Box p={[x0 + w / 2, -0.05, depth / 2]} s={[w, 0.1, depth]} mat={M(palette.floorA, { tx: palette.floorTex, rx: 3, ry: 3 })} cast={false} />
+      {zones.map(([key, a, b, c, d], i) => (
+        <Box key={i} p={[(a + b) / 2, 0.005, (c + d) / 2]} s={[b - a - 0.08, 0.02, d - c - 0.08]}
+          mat={M(palette[key], { tx: 'cleanTiles', rx: Math.round(b - a), ry: Math.round(d - c) })} cast={false} />
+      ))}
+      {/* back wall continues, low outer walls on the camera side */}
+      <Box p={[x0 + w / 2 + 0.125, WALL_H / 2, -WALL_T / 2]} s={[w + 0.25, WALL_H, WALL_T]} mat={wall} />
+      <Box p={[x0 + w / 2 + 0.125, WALL_H + 0.04, -WALL_T / 2]} s={[w + 0.29, 0.08, WALL_T + 0.04]} mat={cap} />
+      {[15.5, 18.5].map(x => <Window key={x} p={[x, 1.75, 0.03]} />)}
+      <Box p={[x1 + 0.2, 0.35, depth / 2]} s={[0.4, 0.7, depth + 0.4]} mat={wall} />
+      <Box p={[x1 + 0.2, 0.73, depth / 2]} s={[0.44, 0.06, depth + 0.44]} mat={cap} />
+      <Box p={[x0 + w / 2 + 0.1, 0.35, depth + 0.2]} s={[w + 0.6, 0.7, 0.4]} mat={wall} />
+      <Box p={[x0 + w / 2 + 0.1, 0.73, depth + 0.2]} s={[w + 0.64, 0.06, 0.44]} mat={cap} />
+      {/* room dividers */}
+      {[14, 17].map(x => divider([x, 0.6, 1.6], [0.3, 1.2, 3.2], `x${x}`))}
+      {full && [4.5, 7.5].map(z => divider([18.4, 0.6, z], [3.2, 1.2, 0.3], `z${z}`))}
+      {full && (
+        <group>
+          {/* small waiting corner in the wing */}
+          <group position={[14.55, 0, 7.4]} rotation={[0, Math.PI / 2, 0]}>
+            <Box p={[0, 0.22, 0]} s={[1.6, 0.44, 0.6]} mat={M(palette.zoneDesk)} />
+            <Box p={[0, 0.55, -0.24]} s={[1.6, 0.5, 0.14]} mat={M(palette.zoneDesk)} />
+            <Blob p={[0, 0.02, 0]} size={1.8} />
+          </group>
+          {[[14.7, 5.3], [14.7, 9.6]].map(([x, z]) => (
+            <group key={z} position={[x, 0, z]}>
+              <Cyl p={[0, 0.2, 0]} rt={0.2} rb={0.15} h={0.4} seg={6} mat={M(palette.wallTop)} />
+              <Rock p={[0, 0.62, 0]} rad={0.3} sc={[1, 1.2, 1]} c="#3fb84a" />
+              <Blob p={[0, 0.02, 0]} size={0.7} />
+            </group>
+          ))}
+        </group>
+      )}
     </group>
   );
 }
@@ -421,10 +481,11 @@ function Lounge({ Ext }) {
   );
 }
 
-function Attractions({ Ext }) {
+function Attractions({ Ext, roomCount }) {
   const levels = useHotel(s => s.hotels[s.activeHotel].attractions);
+  const spots = attractionSpots(roomCount);
   return Ext.attractions.map((A, i) => (levels[i] > 0 ? (
-    <group key={i} position={[ATTRACTION_SPOTS[i][0], -0.5, ATTRACTION_SPOTS[i][1]]}>
+    <group key={i} position={[spots[i][0], -0.5, spots[i][1]]}>
       <A level={levels[i]} />
     </group>
   ) : null));
@@ -433,16 +494,19 @@ function Attractions({ Ext }) {
 export default function Hotel() {
   const theme = useTheme();
   const Ext = EXTERIORS[theme.id];
+  const roomCount = useHotel(s => s.hotels[s.activeHotel].rooms.length);
+  const depth = wingDepth(roomCount);
   return (
     <group>
-      <Shell Ext={Ext} />
-      {ROOMS.map((_, i) => <Room key={i} index={i} />)}
+      <Shell Ext={Ext} depth={depth} />
+      {depth > 0 && <Wing depth={depth} />}
+      {ROOMS.slice(0, roomCount).map((_, i) => <Room key={i} index={i} />)}
       <Reception />
       <Bar Ext={Ext} />
       <Lounge Ext={Ext} />
-      <Ext.Outside />
+      <Ext.Outside wing={depth} />
       <Street />
-      <Attractions Ext={Ext} />
+      <Attractions Ext={Ext} roomCount={roomCount} />
     </group>
   );
 }

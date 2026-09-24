@@ -6,7 +6,7 @@
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { PCFSoftShadowMap } from 'three';
 import { cam, FIT_WIDTH } from '../../game/camera';
@@ -33,6 +33,15 @@ const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
 function CameraRig() {
   const { camera, size } = useThree();
   const intro = useRef(0);
+  const hotelId = useHotel(s => s.activeHotel);
+  const roomCount = useHotel(s => s.hotels[s.activeHotel].rooms.length);
+  // centre the view on the whole building when a hotel is entered (wings are wider)
+  useEffect(() => {
+    cam.x = roomCount > 6 ? 11.6 : 8.6;
+    cam.z = roomCount > 8 ? 8 : roomCount > 6 ? 7.6 : 8.4;
+    cam.zoom = roomCount > 6 ? 0.84 : 1;
+    intro.current = 0;
+  }, [hotelId, roomCount]);
   useFrame(({ clock }, dt) => {
     step(dt);
     const t = clock.elapsedTime;

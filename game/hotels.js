@@ -64,7 +64,8 @@ export const HOTELS = [
     unlock: { coins: 40000, hotel: 'nachtruh', stars: 3 },
     bed: 'vampireCoffin',
     bar: { name: 'Blutwein-Keller', drink: 'Blutwein', icon: 'glass-wine' },
-    rooms: ['Kerkerzelle', 'Turmgemach', 'Rote Kammer', 'Fledermaus-Loft', 'Ahnengalerie', 'Draculas Suite'],
+    rooms: ['Kerkerzelle', 'Turmgemach', 'Rote Kammer', 'Fledermaus-Loft', 'Ahnengalerie', 'Draculas Suite',
+      'Blutmond-Kammer', 'Nachtflügel-Suite'],
     guests: [
       { id: 'fledermaus', name: 'Fledermaus-Tourist', star: 0, mult: 1,   model: 'bat' },
       { id: 'lehrling',   name: 'Vampir-Lehrling',    star: 1, mult: 1.6, model: 'vampire', color: '#6a4ab0', cape: '#e0344c' },
@@ -112,7 +113,8 @@ export const HOTELS = [
     unlock: { coins: 600000, hotel: 'dracula', stars: 3 },
     bed: 'sarcophagus',
     bar: { name: 'Nilnektar-Oase', drink: 'Nilnektar', icon: 'cup' },
-    rooms: ['Grabkammer', 'Sonnenkammer', 'Skarabäus-Suite', 'Papyrus-Zimmer', 'Goldene Halle', 'Pharaonengemach'],
+    rooms: ['Grabkammer', 'Sonnenkammer', 'Skarabäus-Suite', 'Papyrus-Zimmer', 'Goldene Halle', 'Pharaonengemach',
+      'Anubis-Zimmer', 'Nil-Suite'],
     guests: [
       { id: 'skarabaeus', name: 'Skarabäus',          star: 0, mult: 1,   model: 'beetle' },
       { id: 'mumie',      name: 'Mumie',              star: 1, mult: 1.6, model: 'mummy' },
@@ -160,7 +162,8 @@ export const HOTELS = [
     unlock: { coins: 9000000, hotel: 'pyramide', stars: 3 },
     bed: 'iceBed',
     bar: { name: 'Frostpunsch-Bar', drink: 'Frostpunsch', icon: 'glass-mug-variant' },
-    rooms: ['Iglu-Zimmer', 'Schneehöhle', 'Kristallkammer', 'Polarlicht-Suite', 'Gletscher-Loft', 'Yeti-Palastsuite'],
+    rooms: ['Iglu-Zimmer', 'Schneehöhle', 'Kristallkammer', 'Polarlicht-Suite', 'Gletscher-Loft', 'Yeti-Palastsuite',
+      'Nordwind-Zimmer', 'Eiszapfen-Kammer', 'Schneeflocken-Suite', 'Kronjuwel-Suite'],
     guests: [
       { id: 'schneegeist', name: 'Schneegeist',  star: 0, mult: 1,   model: 'snowSprite' },
       { id: 'wichtel',     name: 'Eiswichtel',   star: 1, mult: 1.6, model: 'gnome' },

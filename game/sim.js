@@ -13,7 +13,7 @@
 import { create } from 'zustand';
 import {
   BAR_VISIT_CHANCE, CLEAN_SECONDS_STAFF, CLEAN_SECONDS_TAP, DRINK_SECONDS, GHOST_SPEED,
-  MAX_QUEUE, NIGHT_LENGTH_MIN, NIGHT_START_MIN, P, ROOMS, SERVE_SECONDS_STAFF, STAY_SECONDS,
+  MAX_QUEUE, NIGHT_LENGTH_MIN, WING, NIGHT_START_MIN, P, ROOMS, SERVE_SECONDS_STAFF, STAY_SECONDS,
   TIP_MULT, TIP_SECONDS, ZOMBIE_SPEED, autoCheckinSeconds, barStools, drinkPrice, roomPrice,
   spawnInterval, staffSpeed, starsFor,
 } from './config';
@@ -49,7 +49,6 @@ export const sim = {
 };
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
-const isLeftRoom = (r) => ROOMS[r].rot !== 0;
 
 function syncLists() {
   useSim.setState({
@@ -134,24 +133,30 @@ function pay(g, amount, def) {
 }
 
 // ─── paths ───────────────────────────────────────────────────────────────────
+/** Waypoints between the main corridor (z = 3.9) and a room's door. */
+const hallTo = (r) => {
+  const room = ROOMS[r];
+  if (room.side === 'left') return [P.corridorW];
+  if (room.side === 'right') return [[WING.hallX, 3.9]];
+  return [];
+};
+
 const pathDeskToRoom = (r) => {
   const room = ROOMS[r];
-  const via = isLeftRoom(r) ? [P.corridorE, P.corridorW] : [P.corridorE];
-  return [P.afterDesk, ...via, room.door, room.entry, room.bed];
+  return [P.afterDesk, P.corridorE, ...hallTo(r), room.door, room.entry, room.bed];
 };
 
 const pathRoomToExit = (r) => {
   const room = ROOMS[r];
-  const via = isLeftRoom(r) ? [P.corridorW] : [];
-  return [room.entry, room.door, ...via, [13.4, 3.9], [13.4, 12.2], P.exit];
+  return [room.entry, room.door, ...hallTo(r), [13.4, 3.9], [13.4, 12.2], P.exit];
 };
 
 const pathRoomToStool = (r, s) => {
   const room = ROOMS[r];
   const stool = P.stools[s];
-  const via = isLeftRoom(r)
+  const via = room.side === 'left'
     ? [[4.3, room.door[1]], [4.3, 6.9]]
-    : [[10.2, 3.9], [10.2, 6.9]];
+    : [...hallTo(r), [10.2, 3.9], [10.2, 6.9]];
   return [room.entry, room.door, ...via, [stool[0], 6.9], stool];
 };
 
@@ -333,8 +338,8 @@ function updateBarkeeper(hs) {
 
 function cleanerPathTo(r) {
   const room = ROOMS[r];
-  const via = isLeftRoom(r) ? [[4.4, room.door[1]], room.door] : [[4.4, 3.9], room.door];
-  return [[4.4, P.cleanerIdle[1]], ...via, room.entry, room.clean];
+  const via = room.side === 'left' ? [[4.4, room.door[1]]] : [[4.4, 3.9], ...hallTo(r)];
+  return [[4.4, P.cleanerIdle[1]], ...via, room.door, room.entry, room.clean];
 }
 
 function finishClean(r) {
@@ -373,9 +378,10 @@ function updateCleaner(dt, hs) {
   c.timer -= dt;
   if (c.timer <= 0) {
     finishClean(c.task);
-    const back = isLeftRoom(c.task)
-      ? [ROOMS[c.task].entry, ROOMS[c.task].door, [4.4, ROOMS[c.task].door[1]]]
-      : [ROOMS[c.task].entry, ROOMS[c.task].door, [4.4, 3.9]];
+    const room = ROOMS[c.task];
+    const back = room.side === 'left'
+      ? [room.entry, room.door, [4.4, room.door[1]]]
+      : [room.entry, room.door, ...hallTo(c.task).reverse(), [4.4, 3.9]];
     c.task = null;
     c.working = false;
     c.path = [...back, [4.4, P.cleanerIdle[1]], P.cleanerIdle];

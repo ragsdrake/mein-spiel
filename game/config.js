@@ -25,7 +25,7 @@ export function starProgress(earned, pm = 1) {
 
 // ─── rooms ───────────────────────────────────────────────────────────────────
 export const ROOM_MAX_LEVEL = 10;
-export const ROOM_UNLOCK_COST = [0, 60, 400, 2500, 15000, 90000];
+export const ROOM_UNLOCK_COST = [0, 60, 400, 2500, 15000, 90000, 400000, 1500000, 5000000, 16000000];
 export const roomPrice       = (level, pm = 1) => Math.round(10 * pm * Math.pow(1.45, level - 1));
 export const roomUpgradeCost = (index, level, pm = 1) =>
   Math.round(30 * pm * Math.pow(1.75, level) * (1 + index * 0.8));
@@ -118,9 +118,10 @@ const toWorld = ([cx, cz], rot, [x, z]) => [
   cz - x * Math.sin(rot) + z * Math.cos(rot),
 ];
 
-function room(center, rot, layout, front, corridor) {
+function room(side, center, rot, layout, front, corridor) {
   const L = ROOM_LAYOUTS[layout];
   return {
+    side,                                             // 'back' | 'left' | 'right' (wing)
     center,                                           // room middle (for markers)
     rot,
     layout,
@@ -133,15 +134,27 @@ function room(center, rot, layout, front, corridor) {
   };
 }
 
-/** Guest rooms along the back wall (z = 0) and the left wall (x = 0). */
+/**
+ * Guest rooms along the back wall (z = 0) and the left wall (x = 0); rooms 7+
+ * sit in the east wing that bigger hotels add (x 14…20, see WING).
+ * A hotel uses as many rooms as it has room names (game/hotels.js).
+ */
 export const ROOMS = [
-  room([2, 1.5],   0,           0, 1.6, 2.4),
-  room([5, 1.5],   0,           2, 1.6, 2.4),
-  room([8, 1.5],   0,           1, 1.6, 2.4),
-  room([11, 1.5],  0,           3, 1.6, 2.4),
-  room([1.6, 5.2], Math.PI / 2, 3, 1.5, 2.3),
-  room([1.6, 8.2], Math.PI / 2, 2, 1.5, 2.3),
+  room('back',  [2, 1.5],    0,            0, 1.6, 2.4),
+  room('back',  [5, 1.5],    0,            2, 1.6, 2.4),
+  room('back',  [8, 1.5],    0,            1, 1.6, 2.4),
+  room('back',  [11, 1.5],   0,            3, 1.6, 2.4),
+  room('left',  [1.6, 5.2],  Math.PI / 2,  3, 1.5, 2.3),
+  room('left',  [1.6, 8.2],  Math.PI / 2,  2, 1.5, 2.3),
+  room('back',  [15.5, 1.5], 0,            1, 1.6, 2.4),
+  room('back',  [18.5, 1.5], 0,            0, 1.6, 2.4),
+  room('right', [18.4, 6.0], -Math.PI / 2, 2, 1.6, 2.3),
+  room('right', [18.4, 9.0], -Math.PI / 2, 1, 1.6, 2.3),
 ];
+
+/** East wing of the bigger hotels: x range and depth by room count. */
+export const WING = { x0: 14, x1: 20, hallX: 16.1 };
+export const wingDepth = (roomCount) => (roomCount > 8 ? 10.5 : roomCount > 6 ? 4.8 : 0);
 
 export const P = {
   spawn:       [12.6, 21],
@@ -159,3 +172,6 @@ export const P = {
 
 /** Garden spots where the three attractions of a hotel appear. */
 export const ATTRACTION_SPOTS = [[16.2, 9.5], [3.2, 15.4], [8.4, 16.2]];
+/** …moved out of the way of a full east wing */
+export const attractionSpots = (roomCount) =>
+  (wingDepth(roomCount) > 8 ? [[18, 14], ATTRACTION_SPOTS[1], ATTRACTION_SPOTS[2]] : ATTRACTION_SPOTS);

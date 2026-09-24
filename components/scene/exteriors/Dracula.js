@@ -28,7 +28,7 @@ function Gargoyle({ p, r = 0 }) {
   );
 }
 
-function Outside() {
+function Outside({ wing = 0 }) {
   return (
     <group>
       <Ground />
@@ -41,7 +41,7 @@ function Outside() {
       <Box p={[1.8, 2.6, -4.2]} s={[9, 6.2, 1.2]} mat={M(CASTLE, { tx: 'bricks', rx: 5, ry: 3, bump: 2 })} />
       <Box p={[12, 2.6, -4.2]} s={[8, 6.2, 1.2]} mat={M(CASTLE, { tx: 'bricks', rx: 5, ry: 3, bump: 2 })} />
       <Hill p={[-9, -1.5, 4]} s={[6, 4, 12]} color="#6aa050" />
-      <Hill p={[23, -1.5, 6]} s={[6, 3.5, 12]} color="#6aa050" />
+      <Hill p={[wing ? 26 : 23, -1.5, 6]} s={[6, 3.5, 12]} color="#6aa050" />
 
       <Gargoyle p={[11.2, -0.5, 13.2]} r={0.3} />
       <Gargoyle p={[14.6, -0.5, 13.2]} r={-0.3} />
@@ -49,14 +49,14 @@ function Outside() {
       <Gravestone p={[5, -0.5, 15.8]} r={-0.1} color="#6a6474" />
       <Gravestone p={[7.2, -0.5, 14.3]} r={0.1} kind={1} color="#6a6474" />
       <Gravestone p={[17.2, -0.5, 12]} r={-1.5} color="#6a6474" />
-      <DeadTree p={[17, -0.5, 1.5]} s={1.5} color="#5a3a30" />
+      <DeadTree p={wing ? [22.6, -0.5, 1.5] : [17, -0.5, 1.5]} s={1.5} color="#5a3a30" />
       <DeadTree p={[0.5, -0.5, 19]} s={1.3} color="#5a3a30" />
       <DeadTree p={[17.5, -0.5, 16]} s={1.1} color="#5a3a30" />
       <Bush p={[9.4, -0.5, 14]} s={0.9} color="#3f8a44" flowers="#b3122e" />
       <Bush p={[16, -0.5, 8]} s={1.1} color="#3f8a44" flowers="#b3122e" />
       <Bush p={[0.5, -0.5, 13.6]} s={1.1} color="#3f8a44" flowers="#b3122e" />
       <Fence from={[-1, 19.6]} to={[11.6, 19.6]} count={13} spikes />
-      <Fence from={[18.6, 3]} to={[18.6, 18]} count={12} spikes />
+      <Fence from={wing ? [21.6, 1] : [18.6, 3]} to={[wing ? 21.6 : 18.6, 18]} count={12} spikes />
       <PoleTorch p={[11.2, -0.5, 16.5]} />
       <PoleTorch p={[14.6, -0.5, 16.5]} />
       <Rock p={[4, -0.3, 18]} rad={0.7} sc={[1.3, 0.8, 1]} c="#9a94a4" />
@@ -65,9 +65,9 @@ function Outside() {
 }
 
 /** Battlements (merlons) on top of the back walls. */
-function WallTop() {
+function WallTop({ width = 14 }) {
   const stone = M(CASTLE, { tx: 'bricks', bump: 2 });
-  const back = Array.from({ length: 15 }, (_, i) => i);
+  const back = Array.from({ length: width + 1 }, (_, i) => i);
   const left = Array.from({ length: 13 }, (_, i) => i);
   return (
     <group>

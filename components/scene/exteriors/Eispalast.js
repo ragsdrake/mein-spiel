@@ -58,7 +58,7 @@ function FrozenLake() {
   );
 }
 
-function Outside() {
+function Outside({ wing = 0 }) {
   return (
     <group>
       <Ground />
@@ -69,15 +69,15 @@ function Outside() {
       <Spire p={[16.5, -0.5, -3]} h={8} rad={1.3} tilt={0.08} />
       <Spire p={[-4, -0.5, 7]} h={6} rad={1} tilt={-0.1} />
       {/* snow hills — kept well outside the building footprint */}
-      {[[-9, 4, [5, 3, 8]], [23, 8, [5, 2.5, 8]], [6, -15, [11, 4, 5]]].map(([x, z, sc], i) => (
+      {[[-9, 4, [5, 3, 8]], [wing ? 27.5 : 23, 8, [5, 2.5, 8]], [6, -15, [11, 4, 5]]].map(([x, z, sc], i) => (
         <Rock key={i} p={[x, -1.4, z]} rad={1} sc={sc} mat={SNOW()} detail={1} />
       ))}
-      <Pine p={[16.6, -0.5, 7]} s={1.2} />
-      <Pine p={[17.4, -0.5, 11]} s={0.9} />
+      <Pine p={wing ? [22.2, -0.5, 6.5] : [16.6, -0.5, 7]} s={1.2} />
+      <Pine p={wing ? [21.4, -0.5, 12.2] : [17.4, -0.5, 11]} s={0.9} />
       <Pine p={[0, -0.5, 20]} s={1.3} />
       <Pine p={[9.5, -0.5, 20]} s={1} />
       <Pine p={[17, -0.5, 17]} s={1.4} />
-      <Igloo p={[16.8, -0.5, 2.8]} r={-1.2} />
+      <Igloo p={wing ? [22.8, -0.5, 2.4] : [16.8, -0.5, 2.8]} r={-1.2} />
       <FrozenLake />
       {Array.from({ length: 8 }, (_, i) => (
         <Rock key={`d${i}`} p={[rand(i) * 16, -0.55, 13 + rand(i + 9) * 6]} rad={0.6} sc={[1.6, 0.35, 1]} mat={SNOW()} />
@@ -89,11 +89,11 @@ function Outside() {
 }
 
 /** Snow caps and icicles along the wall tops. */
-function WallTop() {
-  const icicles = Array.from({ length: 28 }, (_, i) => i);
+function WallTop({ width = 14 }) {
+  const icicles = Array.from({ length: width * 2 }, (_, i) => i);
   return (
     <group>
-      <Box p={[7, 3.65, -0.1]} s={[14.8, 0.2, 0.7]} mat={SNOW()} />
+      <Box p={[width / 2, 3.65, -0.1]} s={[width + 0.8, 0.2, 0.7]} mat={SNOW()} />
       <Box p={[-0.1, 3.65, 6]} s={[0.7, 0.2, 12.8]} mat={SNOW()} />
       {icicles.map(i => (
         <Cone key={`b${i}`} p={[0.2 + i * 0.5, 3.1, 0.12]} rad={0.06} h={0.3 + rand(i) * 0.4} seg={4} r={[Math.PI, 0, 0]} mat={ICE()} cast={false} />

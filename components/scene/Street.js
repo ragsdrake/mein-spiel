@@ -12,8 +12,8 @@ import { useTheme } from './theme';
 const Z_WALK = 20.2;   // sidewalk from here …
 const Z_ROAD = 21.9;   // … road from here …
 const Z_FAR = 26.1;    // … far sidewalk from here
-const X0 = -14;
-const X1 = 30;
+const X0 = -20;
+const X1 = 40;
 
 /** Blocky van / hearse / carriage-car. Faces +x. */
 export function Vehicle({ color = '#2a2440' }) {

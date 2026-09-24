@@ -9,63 +9,11 @@ import { P } from '../../game/config';
 import { getGuestDef } from '../../game/hotels';
 import { sim, tapGuest, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
+import { CheckinBadge, DrinkBadge, TipBadge, ZzzBadge } from './Badge';
 import Character, { FLOATING } from './Blocky';
-import { Ball, Blob, Box, Cyl, M, Sprite, Torus } from './primitives';
+import { Blob, Box, M } from './primitives';
 import { useTheme } from './theme';
 
-const WHITE = M('#ffffff', { emissive: '#ffffff', intensity: 0.35, smooth: true });
-const ALERT = M('#ff3b3b', { emissive: '#ff2a2a', intensity: 0.6 });
-const COIN  = M('#ffc94a', { emissive: '#ff9d00', intensity: 0.9, metal: 0.8, rough: 0.25 });
-
-/** Speech bubble contents are simple shapes — no fonts needed. */
-function BubbleCheckin() {
-  return (
-    <group>
-      <Ball rad={0.3} w={12} hs={9} mat={WHITE} cast={false} />
-      <Box p={[0, 0.06, 0.26]} s={[0.08, 0.26, 0.06]} mat={ALERT} cast={false} />
-      <Box p={[0, -0.16, 0.26]} s={[0.08, 0.08, 0.06]} mat={ALERT} cast={false} />
-    </group>
-  );
-}
-
-function BubbleDrink() {
-  const { palette } = useTheme();
-  return (
-    <group>
-      <Ball rad={0.3} w={12} hs={9} mat={WHITE} cast={false} />
-      <Cyl p={[-0.03, -0.02, 0.24]} rt={0.1} rb={0.08} h={0.24} seg={8}
-        mat={M(palette.accentLight, { emissive: palette.accentLight, intensity: 1 })} cast={false} />
-      <Torus p={[0.1, -0.02, 0.24]} rad={0.06} tube={0.02} arc={Math.PI} r={[0, 0, -Math.PI / 2]} mat={M('#3a3440')} cast={false} />
-    </group>
-  );
-}
-
-function BubbleTip() {
-  return (
-    <group>
-      <Cyl rt={0.28} h={0.08} seg={16} r={[Math.PI / 2, 0, 0]} mat={COIN} cast={false} />
-      <Cyl p={[0, 0, 0.045]} rt={0.2} h={0.02} seg={16} r={[Math.PI / 2, 0, 0]} mat={M('#ffe08a', { emissive: '#ffb300', intensity: 0.8, metal: 0.8 })} cast={false} />
-      <Sprite size={1.3} color="#ffc94a" opacity={0.6} />
-    </group>
-  );
-}
-
-function BubbleZzz() {
-  const z = (x, y, s) => (
-    <group position={[x, y, 0]} scale={s}>
-      <Box p={[0, 0.08, 0]} s={[0.16, 0.035, 0.03]} mat={WHITE} cast={false} />
-      <Box p={[0, 0, 0]} s={[0.035, 0.2, 0.03]} r={[0, 0, -0.95]} mat={WHITE} cast={false} />
-      <Box p={[0, -0.08, 0]} s={[0.16, 0.035, 0.03]} mat={WHITE} cast={false} />
-    </group>
-  );
-  return (
-    <group>
-      {z(0, 0, 0.8)}
-      {z(0.18, 0.2, 1)}
-      {z(0.4, 0.44, 1.2)}
-    </group>
-  );
-}
 
 /** Characters are drawn ~20 % larger than the old models so they read at a distance. */
 const CHAR_SCALE = 1.2;
@@ -127,10 +75,10 @@ function GuestActor({ id }) {
       </group>
       <Blob p={[0, floats ? -0.2 : 0.02, 0]} size={floats ? 0.8 : 0.9} />
       <group ref={bubble}>
-        <group ref={refs.checkin}><BubbleCheckin /></group>
-        <group ref={refs.drink}><BubbleDrink /></group>
-        <group ref={refs.zzz}><BubbleZzz /></group>
-        <group ref={refs.tip}><BubbleTip /></group>
+        <group ref={refs.checkin}><CheckinBadge /></group>
+        <group ref={refs.drink}><DrinkBadge /></group>
+        <group ref={refs.zzz}><ZzzBadge /></group>
+        <group ref={refs.tip}><TipBadge /></group>
       </group>
       <mesh visible={false} position={[0, 0.9, 0]}>
         <sphereGeometry args={[0.9, 6, 4]} />

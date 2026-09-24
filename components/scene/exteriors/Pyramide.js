@@ -71,7 +71,7 @@ function Nile() {
   );
 }
 
-function Outside() {
+function Outside({ wing = 0 }) {
   return (
     <group>
       <Ground />
@@ -79,7 +79,7 @@ function Outside() {
       <Pyramid p={[-6, -0.5, -7]} s={11} />
       <Pyramid p={[14, -0.5, -8]} s={6} />
       <Pyramid p={[-9, -0.5, 10]} s={5} />
-      {[[20, 4, 1.2], [4, 23.5, 1.5], [9, 16.5, 0.8]].map(([x, z, s], i) => (
+      {[[wing ? 26 : 20, 4, 1.2], [4, 23.5, 1.5], [9, 16.5, 0.8]].map(([x, z, s], i) => (
         <Rock key={i} p={[x, -0.9, z]} rad={2} sc={[s * 2, s * 0.5, s * 1.4]} mat={M(SAND, { tx: 'sand', bump: 1.5 })} detail={1} />
       ))}
       <Palm p={[16.5, -0.5, 8]} s={1.1} />
@@ -102,19 +102,19 @@ function Outside() {
 }
 
 /** Gold band and hieroglyph row along the wall tops. */
-function WallTop() {
+function WallTop({ width = 14 }) {
   const glyph = M('#3a2a14');
   return (
     <group>
-      {Array.from({ length: 20 }, (_, i) => (
+      {Array.from({ length: Math.round(width / 0.7) }, (_, i) => (
         <Box key={`b${i}`} p={[0.4 + i * 0.7, 2.95, 0.03]} s={[0.25, 0.3, 0.02]} r={[0, 0, (i % 3) * 0.3]} mat={glyph} cast={false} />
       ))}
       {Array.from({ length: 17 }, (_, i) => (
         <Box key={`l${i}`} p={[0.03, 2.95, 0.4 + i * 0.7]} s={[0.02, 0.3, 0.25]} r={[(i % 3) * 0.3, 0, 0]} mat={glyph} cast={false} />
       ))}
-      <Box p={[7, 3.2, 0.03]} s={[14.3, 0.08, 0.04]} mat={TEAL()} cast={false} />
+      <Box p={[width / 2, 3.2, 0.03]} s={[width + 0.3, 0.08, 0.04]} mat={TEAL()} cast={false} />
       <Box p={[0.03, 3.2, 6]} s={[0.04, 0.08, 12.3]} mat={TEAL()} cast={false} />
-      {[[-0.15, -0.15], [14.15, -0.15], [-0.15, 12.15]].map(([x, z]) => (
+      {[[-0.15, -0.15], [width + 0.15, -0.15], [-0.15, 12.15]].map(([x, z]) => (
         <Cone key={`${x}${z}`} p={[x, 3.9, z]} rad={0.45} h={0.7} seg={4} r={[0, Math.PI / 4, 0]} mat={GOLD()} />
       ))}
     </group>
