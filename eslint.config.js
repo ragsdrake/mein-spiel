@@ -9,7 +9,7 @@ module.exports = defineConfig([
   },
   {
     // react-three-fiber JSX uses three.js props (position, args, …) unknown to React DOM
-    files: ['components/scene/**/*.js'],
+    files: ['components/scene/**/*.js', 'components/stylelab/**/*.js'],
     rules: { 'react/no-unknown-property': 'off' },
   },
 ]);

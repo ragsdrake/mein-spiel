@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- Layout mockups for the style study. Rendered to PNG with Playwright
+     (see docs/STYLE_STUDY.md). Not part of the app. -->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Spukhotel Layout-Mockups</title>
+<style>
+  @font-face { font-family: Lilita; src: url('../../../node_modules/@expo-google-fonts/lilita-one/400Regular/LilitaOne_400Regular.ttf'); }
+  :root {
+    --ink: #1a1024; --panel: #2e2252; --panel2: #1c1436; --gold: #ffc94a; --green: #4fd07a;
+    --purple: #a46bff; --red: #ff4d5e; --blue: #4aa0ff; --orange: #ff8a2e; --cream: #fff4dc;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #120c22; font-family: Lilita, sans-serif; color: #fff; padding: 24px; display: flex; gap: 28px; }
+  .col { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .cap { font-size: 22px; color: var(--gold); letter-spacing: .5px; }
+  .sub { font-size: 14px; color: #b9aee0; width: 390px; text-align: center; font-family: sans-serif; }
+  .phone { width: 390px; height: 844px; border-radius: 36px; overflow: hidden; position: relative; border: 6px solid #000;
+           background: #2a1f48 url('../mockups-bg.png') center / cover; }
+  .t { text-shadow: 0 2px 0 var(--ink), 0 -1px 0 var(--ink), 1px 0 0 var(--ink), -1px 0 0 var(--ink); }
+  .pill { background: linear-gradient(#3a2c66, #231946); border: 3px solid var(--ink); border-radius: 16px;
+          box-shadow: 0 3px 0 rgba(0,0,0,.45); display: flex; align-items: center; gap: 6px; padding: 4px 10px; }
+  .btn { border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 rgba(0,0,0,.5), inset 0 3px 0 rgba(255,255,255,.35);
+         display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .g-green { background: linear-gradient(#7ef59a, #22a24c); }
+  .g-gold { background: linear-gradient(#ffe07a, #e0901a); }
+  .g-purple { background: linear-gradient(#c79bff, #6a32c0); }
+  .g-blue { background: linear-gradient(#8cc6ff, #2a62c8); }
+  .g-red { background: linear-gradient(#ff8a96, #c8263a); }
+  .g-orange { background: linear-gradient(#ffb56a, #d85a18); }
+  .g-teal { background: linear-gradient(#7af0e0, #1f948e); }
+  .badge { position: absolute; top: -8px; right: -8px; min-width: 22px; height: 22px; border-radius: 11px; background: var(--red);
+           border: 2.5px solid var(--ink); font-size: 12px; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+  .timer { position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%); background: var(--ink); border-radius: 8px;
+           font-size: 10px; padding: 1px 6px; white-space: nowrap; }
+  .coin { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff3b0, #ffc94a 45%, #c47a12);
+          border: 2px solid var(--ink); display: inline-block; flex: none; }
+  .gem { width: 20px; height: 20px; background: linear-gradient(135deg, #f0dcff, #a46bff 50%, #5a24b0); transform: rotate(45deg);
+         border: 2px solid var(--ink); border-radius: 4px; display: inline-block; flex: none; }
+  .plus { width: 20px; height: 20px; border-radius: 6px; background: var(--green); border: 2px solid var(--ink);
+          display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1; }
+  svg { display: block; }
+  .ic { width: 30px; height: 30px; }
+</style>
+</head>
+<body>
+
+<!-- ── 1: main screen, genre-standard layout ─────────────────────────────── -->
+<div class="col">
+  <div class="cap">1 · Hauptbildschirm (Genre-Standard)</div>
+  <div class="phone">
+    <!-- top bar: avatar/level, currencies, income -->
+    <div style="position:absolute;top:44px;left:10px;right:10px;display:flex;gap:8px;align-items:center">
+      <div class="btn g-purple" style="width:56px;height:56px;border-radius:50%">
+        <div style="width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#fff,#dfe8ff);border:2px solid var(--ink)"></div>
+        <div class="badge t" style="top:auto;bottom:-6px;right:-6px;background:var(--blue)">12</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:6px">
+          <div class="pill" style="flex:1.4"><span class="coin"></span><span class="t" style="font-size:19px">4,49 Mio</span><div class="plus t" style="margin-left:auto">+</div></div>
+          <div class="pill" style="flex:1"><span class="gem"></span><span class="t" style="font-size:18px">350</span><div class="plus t" style="margin-left:auto">+</div></div>
+        </div>
+        <div class="pill" style="padding:2px 10px;background:linear-gradient(#2a6b3a,#194a28)">
+          <span class="t" style="font-size:13px">+12,4 Tsd./Min</span>
+          <div style="flex:1;height:10px;border-radius:5px;background:var(--ink);overflow:hidden"><div style="width:62%;height:100%;background:linear-gradient(90deg,#7ef59a,#ffe07a)"></div></div>
+          <span class="t" style="font-size:13px">★ 3</span>
+        </div>
+      </div>
+    </div>
+    <!-- next goal banner -->
+    <div class="pill" style="position:absolute;top:118px;left:50%;transform:translateX(-50%);padding:6px 14px;background:linear-gradient(#ffe07a,#e0901a)">
+      <span class="t" style="font-size:15px">Ziel: Bar auf Stufe 5</span>
+      <div style="width:70px;height:10px;border-radius:5px;background:var(--ink);overflow:hidden"><div style="width:80%;height:100%;background:#fff"></div></div>
+      <span class="t" style="font-size:13px">4/5</span>
+    </div>
+    <!-- left column: offers & events -->
+    <div style="position:absolute;top:170px;left:10px;display:flex;flex-direction:column;gap:22px">
+      <div class="btn g-red" style="width:62px;height:62px"><span class="t" style="font-size:12px;text-align:center">START-<br>PAKET</span><div class="timer">23:41:07</div><div class="badge">-80%</div></div>
+      <div class="btn g-orange" style="width:62px;height:62px"><span class="t" style="font-size:12px;text-align:center">HALLO-<br>WEEN</span><div class="timer">3T 04h</div></div>
+      <div class="btn g-gold" style="width:62px;height:62px"><span class="t" style="font-size:11px;text-align:center">SPAR-<br>SCHWEIN</span><div class="timer">120/300</div></div>
+    </div>
+    <!-- right column: ads & daily -->
+    <div style="position:absolute;top:170px;right:10px;display:flex;flex-direction:column;gap:22px">
+      <div class="btn g-green" style="width:62px;height:62px">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="16" height="14" rx="3" fill="#fff" stroke="#1a1024" stroke-width="2"/><path d="M18 10l4-3v10l-4-3z" fill="#fff" stroke="#1a1024" stroke-width="2"/><path d="M8 9l5 3-5 3z" fill="#1a1024"/></svg>
+        <span class="t" style="font-size:13px">×2</span><div class="timer">Werbung</div>
+      </div>
+      <div class="btn g-blue" style="width:62px;height:62px"><span class="t" style="font-size:12px;text-align:center">TÄGLICH</span><div class="badge">!</div></div>
+      <div class="btn g-purple" style="width:62px;height:62px"><span class="t" style="font-size:12px;text-align:center">PASS</span><div class="timer">Stufe 7</div></div>
+    </div>
+    <!-- in-world upgrade markers -->
+    <div class="btn g-green" style="position:absolute;top:620px;left:190px;width:44px;height:44px;border-radius:50%"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9H9v-9H4z" fill="#fff" stroke="#1a1024" stroke-width="2" stroke-linejoin="round"/></svg></div>
+    <div class="btn g-gold" style="position:absolute;top:560px;left:320px;width:40px;height:40px;border-radius:50%"><span class="coin"></span></div>
+    <div class="pill" style="position:absolute;top:670px;left:150px;padding:2px 8px"><span class="t" style="font-size:12px">Mumie · Stufe 3</span></div>
+    <!-- bottom nav with big centre button -->
+    <div style="position:absolute;bottom:18px;left:8px;right:8px;display:flex;gap:6px;align-items:flex-end;justify-content:center">
+      <div class="btn g-purple" style="width:62px;height:62px"><span class="t" style="font-size:12px">SHOP</span><div class="badge">1</div></div>
+      <div class="btn g-teal" style="width:62px;height:62px"><span class="t" style="font-size:12px">KARTEN</span></div>
+      <div class="btn g-green" style="width:88px;height:88px;border-radius:26px"><span class="t" style="font-size:18px">AUSBAU</span><div class="badge">3</div></div>
+      <div class="btn g-blue" style="width:62px;height:62px"><span class="t" style="font-size:12px">KARTE</span></div>
+      <div class="btn g-orange" style="width:62px;height:62px"><span class="t" style="font-size:12px">AUFGABEN</span><div class="badge">2</div></div>
+    </div>
+  </div>
+  <div class="sub">Avatar + Level, Einkommen/Min, immer sichtbares nächstes Ziel, Angebote links, Werbung/Tagesbonus/Pass rechts, Upgrade-Pfeile direkt in der Welt, großer Haupt-Button.</div>
+</div>
+
+<!-- ── 2: shop ───────────────────────────────────────────────────────────── -->
+<div class="col">
+  <div class="cap">2 · Shop</div>
+  <div class="phone" style="background:linear-gradient(#3a2470,#1c1436)">
+    <div class="t" style="position:absolute;top:50px;width:100%;text-align:center;font-size:30px">SHOP</div>
+    <div style="position:absolute;top:100px;left:14px;right:14px;display:flex;flex-direction:column;gap:14px">
+      <!-- hero offer -->
+      <div style="border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:linear-gradient(135deg,#ff6a8a,#8a2ad0);position:relative;height:170px">
+        <div style="position:absolute;right:-40px;bottom:-30px;width:190px;height:210px;background:url('../mockups-bg.png') 58% 52% / 700px"></div>
+        <div style="padding:12px;position:relative;max-width:62%">
+          <div class="t" style="font-size:24px">Starter-Paket</div>
+          <div class="t" style="font-size:14px;margin-top:4px">500 Kristalle<br>2 Mio Münzen<br>Mumie „Ramses“<br>×2 Einkommen</div>
+          <div class="btn g-green" style="width:140px;height:44px;margin-top:10px"><span class="t" style="font-size:18px">4,99 €</span></div>
+        </div>
+        <div class="badge" style="top:10px;right:10px;font-size:13px;height:26px">-80 %</div>
+      </div>
+      <!-- no ads + pass -->
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;border:3px solid var(--ink);border-radius:18px;background:linear-gradient(#4a3a86,#2a1f52);padding:10px;text-align:center">
+          <div class="t" style="font-size:17px">Keine Werbung</div>
+          <div style="font-family:sans-serif;font-size:11px;color:#cfc4ff;margin:4px 0 8px">Belohnungen ohne Video</div>
+          <div class="btn g-gold" style="height:38px"><span class="t">7,99 €</span></div>
+        </div>
+        <div style="flex:1;border:3px solid var(--ink);border-radius:18px;background:linear-gradient(#b0822a,#6a4210);padding:10px;text-align:center">
+          <div class="t" style="font-size:17px">Geister-Pass</div>
+          <div style="font-family:sans-serif;font-size:11px;color:#ffe9c0;margin:4px 0 8px">Saison 1 · 30 Stufen</div>
+          <div class="btn g-gold" style="height:38px"><span class="t">9,99 €</span></div>
+        </div>
+      </div>
+      <!-- gem packs -->
+      <div class="t" style="font-size:18px">Kristalle</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="border:3px solid var(--ink);border-radius:16px;background:linear-gradient(#3a2c66,#231946);padding:8px;text-align:center"><span class="gem"></span><div class="t" style="margin:6px 0">80</div><div class="btn g-green" style="height:32px"><span class="t" style="font-size:14px">0,99 €</span></div></div>
+        <div style="border:3px solid var(--ink);border-radius:16px;background:linear-gradient(#3a2c66,#231946);padding:8px;text-align:center;position:relative"><span class="gem"></span><div class="t" style="margin:6px 0">500</div><div class="btn g-green" style="height:32px"><span class="t" style="font-size:14px">4,99 €</span></div><div class="badge" style="font-size:10px">BELIEBT</div></div>
+        <div style="border:3px solid var(--ink);border-radius:16px;background:linear-gradient(#3a2c66,#231946);padding:8px;text-align:center"><span class="gem"></span><div class="t" style="margin:6px 0">1.200</div><div class="btn g-green" style="height:32px"><span class="t" style="font-size:14px">9,99 €</span></div></div>
+      </div>
+      <!-- free -->
+      <div style="display:flex;gap:10px">
+        <div class="btn g-teal" style="flex:1;height:52px;flex-direction:row;gap:8px"><span class="t">Gratis-Truhe</span><span class="t" style="font-size:12px">(Video)</span></div>
+        <div class="btn g-purple" style="flex:1;height:52px"><span class="t">Tägliches Angebot</span><div class="timer">07:12:44</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="sub">Hero-Angebot mit Charakter, Keine-Werbung, Saison-Pass, gestaffelte Kristallpakete mit „Beliebt“-Anker, Gratis-Truhe per Werbevideo.</div>
+</div>
+
+<!-- ── 3: story dialogue ─────────────────────────────────────────────────── -->
+<div class="col">
+  <div class="cap">3 · Story-Dialog</div>
+  <div class="phone">
+    <div style="position:absolute;inset:0;background:rgba(10,6,24,.45)"></div>
+    <!-- highlighted objective -->
+    <div style="position:absolute;top:560px;left:160px;width:110px;height:110px;border-radius:50%;box-shadow:0 0 0 4px var(--gold),0 0 30px 8px rgba(255,201,74,.7)"></div>
+    <svg style="position:absolute;top:500px;left:250px;transform:rotate(-30deg)" width="60" height="70" viewBox="0 0 24 28"><path d="M12 2l9 10h-6v14H9V12H3z" fill="#fff" stroke="#1a1024" stroke-width="2" stroke-linejoin="round" transform="rotate(180 12 14)"/></svg>
+    <!-- portrait + box -->
+    <div style="position:absolute;bottom:40px;left:12px;right:12px">
+      <div style="width:150px;height:150px;border-radius:50%;border:4px solid var(--ink);background:url('../mockups-bg.png') 16% 51% / 780px;position:absolute;left:4px;top:-120px;box-shadow:0 4px 0 rgba(0,0,0,.4)"></div>
+      <div style="border:4px solid var(--ink);border-radius:22px;background:linear-gradient(#fff6e6,#f4dfbf);padding:36px 16px 16px;color:var(--ink);position:relative">
+        <div class="pill" style="position:absolute;top:-18px;left:150px;background:linear-gradient(#c8263a,#7a0f22)"><span class="t" style="font-size:16px;color:#fff">Graf Vladimir</span></div>
+        <div style="font-size:19px;line-height:1.3">„Ein Hotel für Untote? Ha! Wenn du bis zum Vollmond drei Mumien zufriedenstellst, verrate ich dir, wo meine Burg steht …“</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+          <span style="font-family:sans-serif;font-size:12px;color:#7a5a3a">Kapitel 2 · Die Einladung</span>
+          <div class="btn g-green" style="width:120px;height:42px"><span class="t" style="font-size:17px">Weiter</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sub">Sprechende Figuren mit Porträt, Kapitelstruktur, Tutorial-Hand und hervorgehobenes Ziel – verbindet Story mit dem nächsten Schritt.</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Side-by-side sheet of the four style renders (docs/stylestudy/style-*.png). -->
+<html lang="de"><head><meta charset="utf-8"><title>Stilvergleich</title>
+<style>
+  @font-face { font-family: Lilita; src: url('../../../node_modules/@expo-google-fonts/lilita-one/400Regular/LilitaOne_400Regular.ttf'); }
+  body { margin: 0; padding: 24px; background: #120c22; font-family: Lilita, sans-serif; color: #fff; }
+  h1 { margin: 0 0 16px; font-size: 34px; color: #ffc94a; }
+  .grid { display: grid; grid-template-columns: repeat(2, 640px); gap: 20px; }
+  .card { background: #1d1535; border: 3px solid #000; border-radius: 18px; overflow: hidden; }
+  .card img { width: 640px; height: 560px; display: block; }
+  .lbl { padding: 10px 14px; font-size: 24px; }
+  .lbl small { display: block; font-family: sans-serif; font-size: 15px; color: #b9aee0; margin-top: 2px; }
+</style></head><body>
+<h1>Spukhotel · Stilstudie (gleiche Szene, gleiche Kamera)</h1>
+<div class="grid">
+  <div class="card"><img src="../style-lowpoly.png"><div class="lbl">A · Low-Poly (aktuell)<small>Alte Figuren, facettiert – wirkt technisch, wenig Persönlichkeit</small></div></div>
+  <div class="card"><img src="../style-soft.png"><div class="lbl">B · Soft 3D<small>Neue Chibi-Figuren, weich beleuchtet – edel, aber auf kleinen Displays weniger lesbar</small></div></div>
+  <div class="card"><img src="../style-toon.png"><div class="lbl">C · Chibi-Toon ★ Empfehlung<small>Cel-Shading + feine Kontur – Genre-Standard, sehr gut lesbar, günstig zu rendern</small></div></div>
+  <div class="card"><img src="../style-ink.png"><div class="lbl">D · Cartoon-Ink<small>Harte Schatten, dicke Kontur – Richtung Jetpack Joyride, sehr comichaft</small></div></div>
+</div>
+</body></html>
