@@ -1,6 +1,6 @@
 /**
  * Mutable camera rig shared by the pan/pinch gestures (app/index.js) and the
- * camera controller inside the Canvas. `x`/`z` is the ground point the
+ * sprite renderer (components/iso). `x`/`z` is the ground point the
  * isometric camera looks at, `zoom` a multiplier on the fit-to-width zoom.
  */
 export const cam = { x: 8.6, z: 8.4, zoom: 1 };
@@ -10,7 +10,7 @@ export const CAM_BOUNDS = { minX: 2, maxX: 20, minZ: 2, maxZ: 17, minZoom: 0.7, 
 /** World units visible across the screen width at zoom 1. */
 export const FIT_WIDTH = 17.5;
 
-const SIN_ELEVATION = 0.677;    // camera on (1, 1.3, 1): pitch ≈ 42.6°
+const SIN_ELEVATION = 0.5;      // 2:1 isometric sprites: 30° elevation
 
 /** Convert a finger drag (pixels) into a camera move on the ground plane. */
 export function panBy(dx, dy, screenWidth) {

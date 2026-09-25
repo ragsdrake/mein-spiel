@@ -15,6 +15,7 @@ import { sim, tapRoom, useSim } from '../../game/sim';
 import useHotel from '../../game/store';
 import useUi from '../../game/ui';
 import { Bump, Construction, PopAt, PopIn, useBuildPhase } from './anim';
+import { Part } from './parts';
 import { CleanBadge, UpgradeBadge } from './Badge';
 import Bed from './Beds';
 import EXTERIORS from './exteriors';
@@ -22,7 +23,7 @@ import { ROOM_COLORS, RoomInterior } from './RoomFurniture';
 import Grounds from './exteriors/Grounds';
 import Street from './Street';
 import { Candelabra, Candle, Cobweb, GOLD, Padlock, Table, Torch, Window } from './Props';
-import { Ball, Blob, Box, Cyl, Halo, M, Rock } from './primitives';
+import { Ball, Blob, Box, Cyl, Halo, M, RENDER_MODE, Rock } from './primitives';
 import { useTheme } from './theme';
 
 // ─── tap targets & upgrade markers ──────────────────────────────────────────
@@ -89,25 +90,29 @@ function Room({ index }) {
         <Construction />
       ) : level === 0 ? (
         <PopIn delay={introDelay}>
+          <Part id={`room${index}-locked`} station={`room:${index}`}>
           <Box p={[-0.4, 0.3, -0.5]} s={[0.6, 0.6, 0.6]} r={[0, 0.3, 0]} mat={M('#7a5234', { tx: 'planks', bump: 1 })} />
           <Box p={[0.3, 0.25, -0.7]} s={[0.5, 0.5, 0.5]} r={[0, -0.2, 0]} mat={M('#6b462c', { tx: 'planks', bump: 1 })} />
           <Box p={[-0.2, 0.8, -0.6]} s={[0.4, 0.4, 0.4]} r={[0, 0.7, 0]} mat={M('#8a603f', { tx: 'planks', bump: 1 })} />
           <Cobweb p={[0.9, 1.1, -1.35]} r={[0, 0, Math.PI / 4]} />
           <Cobweb p={[-1.2, 1.2, -1.35]} r={[0, 0, -Math.PI / 5]} s={0.7} />
-          {prevUnlocked && <Padlock p={[0, 1.5, 0]} onPress={open} />}
+          </Part>
+          {prevUnlocked && !RENDER_MODE.export && <Padlock p={[0, 1.5, 0]} onPress={open} />}
         </PopIn>
       ) : (
         <group>
           <group key={level}>
-            <PopIn position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]} delay={delay} drop={0.8}>
-              <Bed kind={theme.bed} level={level} />
-            </PopIn>
+            <Part id={`room${index}-bed`} station={`room:${index}`}>
+              <PopIn position={[L.bed[0], 0.03, L.bed[1]]} rotation={[0, L.bedRot, 0]} delay={delay} drop={0.8}>
+                <Bed kind={theme.bed} level={level} />
+              </PopIn>
+            </Part>
             <RoomInterior layout={def.layout} index={index} level={level} pal={palette} back={back}
               lowBack={def.side === 'right'} delay={delay + 0.15} />
           </group>
           {dirty && <Puddle index={index} p={L.clean} showHint={!hasCleaner} color={palette.slime} />}
           <TapArea p={[0, 0.1, 0]} s={[2.8, 0.2, 2.8]} onPress={open} />
-          {affordable && !dirty && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
+          {affordable && !dirty && !RENDER_MODE.export && <UpgradeMarker p={[0.9, 1.9, 0.6]} onPress={open} />}
         </group>
       )}
     </group>
@@ -136,7 +141,7 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
   const wz = def.center[1] - doorX * sn + f * c;
 
   useFrame((_, dt) => {
-    if (!leaf.current) return;
+    if (!leaf.current || RENDER_MODE.export) return;
     let near = false;
     if (!locked) {
       const close = (p) => (p[0] - wx) ** 2 + (p[1] - wz) ** 2 < 1.3;
@@ -148,11 +153,12 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
   });
 
   const seg = (x0, x1, key) => x1 - x0 > 0.02 && (
-    <group key={key}>
+    <Part key={key} id={`room${index}-wall-${key}`}>
       <Box p={[(x0 + x1) / 2, FRONT_H / 2, f]} s={[x1 - x0, FRONT_H, 0.22]} mat={wall} />
       <Box p={[(x0 + x1) / 2, FRONT_H + 0.03, f]} s={[x1 - x0 + 0.02, 0.06, 0.26]} mat={cap} />
-    </group>
+    </Part>
   );
+  const doorAngle = RENDER_MODE.export && RENDER_MODE.doorsOpen ? 1.6 : 0;
 
   return (
     <group>
@@ -164,14 +170,17 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
       {seg(span[0], gap0, 'l')}
       {seg(gap1, span[1], 'r')}
       {/* door frame */}
+      <Part id={`room${index}-frame`}>
       <Box p={[gap0 + 0.04, 0.95, f]} s={[0.1, 1.9, 0.28]} mat={frame} />
       <Box p={[gap1 - 0.04, 0.95, f]} s={[0.1, 1.9, 0.28]} mat={frame} />
       <Box p={[doorX, 1.94, f]} s={[gap1 - gap0 + 0.1, 0.12, 0.3]} mat={frame} />
       {/* number plate */}
       <Box p={[doorX, 2.14, f + 0.02]} s={[0.36, 0.22, 0.05]} mat={M(accent)} cast={false} />
       <Box p={[doorX, 2.14, f + 0.05]} s={[0.1, 0.12, 0.02]} mat={M('#ffffff')} cast={false} />
+      </Part>
       {/* door leaf, hinged at the left post */}
-      <group ref={leaf} position={[doorX - DOOR_W / 2, 0, f]}>
+      <Part id={`room${index}-door`} station={`room:${index}`}>
+      <group ref={leaf} position={[doorX - DOOR_W / 2, 0, f]} rotation={[0, doorAngle, 0]}>
         <Box p={[DOOR_W / 2, 0.88, 0]} s={[DOOR_W, 1.76, 0.08]} mat={M(accent)} />
         <Box p={[DOOR_W / 2, 1.2, 0.045]} s={[DOOR_W - 0.24, 0.55, 0.02]} mat={M('#ffffff', { opacity: 0.35 })} cast={false} />
         <Box p={[DOOR_W / 2, 0.5, 0.045]} s={[DOOR_W - 0.24, 0.5, 0.02]} mat={M('#ffffff', { opacity: 0.35 })} cast={false} />
@@ -183,6 +192,7 @@ function RoomWalls({ index, def, doorX, back, span, locked }) {
           </group>
         )}
       </group>
+      </Part>
     </group>
   );
 }
@@ -263,30 +273,34 @@ function Shell({ Ext, depth }) {
 
       {/* room dividers */}
       {[3.5, 6.5, 9.5, 12.5].map(x => (
-        <group key={x}>
+        <Part key={x} id={`div-x${x}`}>
           <Box p={[x, 0.6, 1.6]} s={[0.3, 1.2, 3.2]} mat={wall} />
           <Box p={[x, 1.23, 1.6]} s={[0.34, 0.06, 3.24]} mat={cap} />
-        </group>
+        </Part>
       ))}
       {[3.6, 6.7, 9.7].map(z => (
-        <group key={z}>
+        <Part key={z} id={`div-z${z}`}>
           <Box p={[1.6, 0.6, z]} s={[3.2, 1.2, 0.3]} mat={wall} />
           <Box p={[1.6, 1.23, z]} s={[3.24, 0.06, 0.34]} mat={cap} />
-        </group>
+        </Part>
       ))}
 
       {/* low front walls with the entrance gap (x 11.8 … 13.9) */}
-      <Box p={[5.9, 0.35, 12.2]} s={[11.8, 0.7, 0.4]} mat={wall} />
-      <Box p={[5.9, 0.73, 12.2]} s={[11.84, 0.06, 0.44]} mat={cap} />
-      <Box p={[14.2, 0.35, (depth + 12.2) / 2]} s={[0.4, 0.7, 12.4 - depth]} mat={wall} />
-      <Box p={[14.2, 0.73, (depth + 12.2) / 2]} s={[0.44, 0.06, 12.44 - depth]} mat={cap} />
+      <Part id="front-wall">
+        <Box p={[5.9, 0.35, 12.2]} s={[11.8, 0.7, 0.4]} mat={wall} />
+        <Box p={[5.9, 0.73, 12.2]} s={[11.84, 0.06, 0.44]} mat={cap} />
+      </Part>
+      <Part id="right-wall">
+        <Box p={[14.2, 0.35, (depth + 12.2) / 2]} s={[0.4, 0.7, 12.4 - depth]} mat={wall} />
+        <Box p={[14.2, 0.73, (depth + 12.2) / 2]} s={[0.44, 0.06, 12.44 - depth]} mat={cap} />
+      </Part>
       {[11.8, 13.95].map(x => (
-        <group key={x}>
+        <Part key={x} id={`gate-${x}`}>
           <Box p={[x, 0.7, 12.2]} s={[0.4, 1.4, 0.4]} mat={wall} />
           <Box p={[x, 1.43, 12.2]} s={[0.44, 0.06, 0.44]} mat={cap} />
           <Cyl p={[x, 1.58, 12.2]} rt={0.14} rb={0.1} h={0.22} seg={6} c="#2c2433" />
           <Ball p={[x, 1.6, 12.2]} rad={0.09} w={6} hs={4} mat={M('#fff1b8', { emissive: palette.warm, intensity: 1 })} cast={false} />
-        </group>
+        </Part>
       ))}
 
       <Stairs />
@@ -307,10 +321,10 @@ function Wing({ depth }) {
     ...(full ? [['zoneRoom', 16.8, 20, 4.5, 7.5], ['zoneRoom', 16.8, 20, 7.5, 10.5], ['zoneLounge', 14.3, 15.7, 4.8, 10.1]] : []),
   ];
   const divider = (p, s, key) => (
-    <group key={key}>
+    <Part key={key} id={`wing-div-${key}`}>
       <Box p={p} s={s} mat={wall} />
       <Box p={[p[0], 1.23, p[2]]} s={[s[0] + 0.04, 0.06, s[2] + 0.04]} mat={cap} />
-    </group>
+    </Part>
   );
   return (
     <group>
@@ -324,27 +338,31 @@ function Wing({ depth }) {
       <Box p={[x0 + w / 2 + 0.125, WALL_H / 2, -WALL_T / 2]} s={[w + 0.25, WALL_H, WALL_T]} mat={wall} />
       <Box p={[x0 + w / 2 + 0.125, WALL_H + 0.04, -WALL_T / 2]} s={[w + 0.29, 0.08, WALL_T + 0.04]} mat={cap} />
       {[15.5, 18.5].map(x => <Window key={x} p={[x, 1.75, 0.03]} />)}
-      <Box p={[x1 + 0.2, 0.35, depth / 2]} s={[0.4, 0.7, depth + 0.4]} mat={wall} />
-      <Box p={[x1 + 0.2, 0.73, depth / 2]} s={[0.44, 0.06, depth + 0.44]} mat={cap} />
-      <Box p={[x0 + w / 2 + 0.1, 0.35, depth + 0.2]} s={[w + 0.6, 0.7, 0.4]} mat={wall} />
-      <Box p={[x0 + w / 2 + 0.1, 0.73, depth + 0.2]} s={[w + 0.64, 0.06, 0.44]} mat={cap} />
+      <Part id="wing-right-wall">
+        <Box p={[x1 + 0.2, 0.35, depth / 2]} s={[0.4, 0.7, depth + 0.4]} mat={wall} />
+        <Box p={[x1 + 0.2, 0.73, depth / 2]} s={[0.44, 0.06, depth + 0.44]} mat={cap} />
+      </Part>
+      <Part id="wing-front-wall">
+        <Box p={[x0 + w / 2 + 0.1, 0.35, depth + 0.2]} s={[w + 0.6, 0.7, 0.4]} mat={wall} />
+        <Box p={[x0 + w / 2 + 0.1, 0.73, depth + 0.2]} s={[w + 0.64, 0.06, 0.44]} mat={cap} />
+      </Part>
       {/* room dividers */}
       {[14, 17].map(x => divider([x, 0.6, 1.6], [0.3, 1.2, 3.2], `x${x}`))}
       {full && [4.5, 7.5].map(z => divider([18.4, 0.6, z], [3.2, 1.2, 0.3], `z${z}`))}
       {full && (
         <group>
           {/* small waiting corner in the wing */}
-          <group position={[14.55, 0, 7.4]} rotation={[0, Math.PI / 2, 0]}>
+          <Part id="wing-sofa" position={[14.55, 0, 7.4]} rotation={[0, Math.PI / 2, 0]}>
             <Box p={[0, 0.22, 0]} s={[1.6, 0.44, 0.6]} mat={M(palette.zoneDesk)} />
             <Box p={[0, 0.55, -0.24]} s={[1.6, 0.5, 0.14]} mat={M(palette.zoneDesk)} />
             <Blob p={[0, 0.02, 0]} size={1.8} />
-          </group>
+          </Part>
           {[[14.7, 5.3], [14.7, 9.6]].map(([x, z]) => (
-            <group key={z} position={[x, 0, z]}>
+            <Part key={z} id={`wing-plant-${z}`} position={[x, 0, z]}>
               <Cyl p={[0, 0.2, 0]} rt={0.2} rb={0.15} h={0.4} seg={6} mat={M(palette.wallTop)} />
               <Rock p={[0, 0.62, 0]} rad={0.3} sc={[1, 1.2, 1]} c="#3fb84a" />
               <Blob p={[0, 0.02, 0]} size={0.7} />
-            </group>
+            </Part>
           ))}
         </group>
       )}
@@ -387,6 +405,7 @@ function Reception() {
     <group position={[10, 0, 9.6]}>
      <Bump trigger={level}>
      <group position={[-10, 0, -9.6]}>
+      <Part id="reception-desk">
       <Box p={[10, 0.5, 9.6]} s={[0.8, 1.0, 2.6]} mat={wood} />
       <Box p={[10.42, 0.5, 9.6]} s={[0.04, 0.7, 2.2]} mat={M(palette.woodDark)} cast={false} />
       <Box p={[10.43, 0.5, 9.6]} s={[0.03, 0.1, 2.2]} mat={GOLD()} cast={false} />
@@ -397,6 +416,7 @@ function Reception() {
       </group>
       <Box p={[9.95, 1.13, 10.1]} s={[0.4, 0.06, 0.55]} r={[0, 0.2, 0]} c="#7a2433" />
       <Candle p={[9.9, 1.1, 10.7]} h={0.3} />
+      </Part>
       <group position={[8.7, 0, 9.6]}>
         <Box p={[0, 0.9, 0]} s={[0.25, 1.8, 1.6]} mat={M(palette.woodDark, { tx: 'planks', bump: 0.8 })} />
         {[-0.5, 0, 0.5].map(z => [1.3, 0.9].map(y => (
@@ -405,7 +425,7 @@ function Reception() {
       </group>
       <Halo p={[10.2, 0.04, 9.6]} size={3.5} color={palette.warm} opacity={0.18} />
       <TapArea p={[9.6, 0.6, 9.6]} s={[1.6, 1.2, 2.8]} onPress={open} />
-      {affordable && <UpgradeMarker p={[10, 2.4, 9.6]} onPress={open} />}
+      {affordable && !RENDER_MODE.export && <UpgradeMarker p={[10, 2.4, 9.6]} onPress={open} />}
      </group>
      </Bump>
     </group>
@@ -433,19 +453,25 @@ function Bar({ Ext }) {
       <group position={[7, 0, 5.3]}>
       <Bump trigger={level}>
       <group position={[-7, 0, -5.3]}>
-      <Box p={[6.9, 0.5, 5.3]} s={[4.6, 1.0, 0.8]} mat={wood} />
-      <Box p={[6.9, 0.5, 5.71]} s={[4.3, 0.12, 0.04]} mat={GOLD()} cast={false} />
-      <Box p={[6.9, 1.05, 5.3]} s={[4.8, 0.1, 1.0]} mat={top} />
-      <Box p={[9.4, 0.5, 4.75]} s={[0.8, 1.0, 1.9]} mat={wood} />
-      <Box p={[9.4, 1.05, 4.75]} s={[1.0, 0.1, 2.1]} mat={top} />
+      <Part id="bar-counter">
+        <Box p={[6.9, 0.5, 5.3]} s={[4.6, 1.0, 0.8]} mat={wood} />
+        <Box p={[6.9, 0.5, 5.71]} s={[4.3, 0.12, 0.04]} mat={GOLD()} cast={false} />
+        <Box p={[6.9, 1.05, 5.3]} s={[4.8, 0.1, 1.0]} mat={top} />
+      </Part>
+      <Part id="bar-side">
+        <Box p={[9.4, 0.5, 4.75]} s={[0.8, 1.0, 1.9]} mat={wood} />
+        <Box p={[9.4, 1.05, 4.75]} s={[1.0, 0.1, 2.1]} mat={top} />
+      </Part>
 
       {level === 0 ? (
         <group>
-          <Box p={[6.9, 1.2, 5.3]} s={[4.7, 0.2, 1.05]} mat={M('#a9a3b3', { tx: 'fabric' })} />
-          <Padlock p={[6.9, 2.1, 5.3]} onPress={open} />
+          <Part id="bar-top" station="bar">
+            <Box p={[6.9, 1.2, 5.3]} s={[4.7, 0.2, 1.05]} mat={M('#a9a3b3', { tx: 'fabric' })} />
+          </Part>
+          {!RENDER_MODE.export && <Padlock p={[6.9, 2.1, 5.3]} onPress={open} />}
         </group>
       ) : (
-        <group>
+        <Part id="bar-top" station="bar">
           {[5.0, 5.3, 5.6, 7.9, 8.3].map((x, i) => (
             <group key={x} position={[x, 1.1, 5.1]}>
               <Cyl p={[0, 0.16, 0]} rt={0.07} h={0.32} seg={8}
@@ -453,23 +479,23 @@ function Bar({ Ext }) {
               <Cyl p={[0, 0.38, 0]} rt={0.03} h={0.12} seg={6} c="#2c2433" />
             </group>
           ))}
-          <Ext.BarPiece level={level} />
           {level >= 3 && <Candelabra p={[5.2, 1.1, 5.4]} gold={level >= 6} />}
           <Halo p={[7, 0.04, 6]} size={4} color={palette.accentLight} opacity={0.12} />
-        </group>
+        </Part>
       )}
+      {level > 0 && <Part id="bar-piece" station="bar"><Ext.BarPiece level={level} /></Part>}
 
       </group>
       </Bump>
       </group>
       <TapArea p={[7.2, 0.6, 5.1]} s={[5.2, 1.2, 1.4]} onPress={open} />
-      {affordable && <UpgradeMarker p={[7.2, 2.2, 5.3]} onPress={open} />}
-      {P.stools.slice(0, stools).map(([x, z]) => (
-        <group key={x} position={[x, 0, z]}>
+      {affordable && !RENDER_MODE.export && <UpgradeMarker p={[7.2, 2.2, 5.3]} onPress={open} />}
+      {P.stools.slice(0, stools).map(([x, z], i) => (
+        <Part key={x} id={`stool${i}`} station="bar" position={[x, 0, z]}>
           <Cyl p={[0, 0.3, 0]} rt={0.05} h={0.6} seg={6} mat={M('#2c2433', { metal: 0.6, rough: 0.4 })} />
           <Cyl p={[0, 0.62, 0]} rt={0.22} h={0.08} seg={10} mat={M(palette.rugHi, { tx: 'fabric' })} />
           <Blob p={[0, 0.03, 0]} size={0.7} />
-        </group>
+        </Part>
       ))}
     </group>
   );
@@ -480,33 +506,35 @@ function Lounge({ Ext }) {
   const { palette } = useTheme();
   return (
     <group>
-      <Table p={[6.5, 0, 9.2]} />
-      <Table p={[8.2, 0, 11.1]} />
-      <Table p={[5.3, 0, 11.3]} />
-      <Ext.LoungePiece />
+      <Part id="table-a"><Table p={[6.5, 0, 9.2]} /></Part>
+      <Part id="table-b"><Table p={[8.2, 0, 11.1]} /></Part>
+      <Part id="table-c"><Table p={[5.3, 0, 11.3]} /></Part>
+      <Part id="lounge-piece"><Ext.LoungePiece /></Part>
       {/* waiting sofa + coffee table */}
-      <group position={[3.2, 0, 11.4]} rotation={[0, Math.PI, 0]}>
+      <Part id="sofa" position={[3.2, 0, 11.4]} rotation={[0, Math.PI, 0]}>
         <Box p={[0, 0.22, 0]} s={[1.6, 0.44, 0.6]} mat={M(palette.zoneDesk)} />
         <Box p={[0, 0.55, 0.24]} s={[1.6, 0.5, 0.14]} mat={M(palette.zoneDesk)} />
         <Box p={[0.76, 0.36, 0]} s={[0.1, 0.3, 0.6]} mat={M(palette.zoneDesk)} />
         <Box p={[-0.76, 0.36, 0]} s={[0.1, 0.3, 0.6]} mat={M(palette.zoneDesk)} />
         <Blob p={[0, 0.02, 0]} size={1.8} />
-      </group>
-      <Box p={[3.2, 0.2, 10.5]} s={[0.9, 0.08, 0.5]} mat={M(palette.wood)} />
-      <Box p={[3.2, 0.1, 10.5]} s={[0.7, 0.2, 0.3]} mat={M(palette.woodDark)} />
+      </Part>
+      <Part id="coffee-table">
+        <Box p={[3.2, 0.2, 10.5]} s={[0.9, 0.08, 0.5]} mat={M(palette.wood)} />
+        <Box p={[3.2, 0.1, 10.5]} s={[0.7, 0.2, 0.3]} mat={M(palette.woodDark)} />
+      </Part>
       {/* potted plants in the corners of the zones */}
       {[[4.2, 7.9], [9.3, 11.6], [11.3, 7.9], [3.8, 4.2]].map(([x, z]) => (
-        <group key={`${x}${z}`} position={[x, 0, z]}>
+        <Part key={`${x}${z}`} id={`plant-${x}-${z}`} position={[x, 0, z]}>
           <Cyl p={[0, 0.2, 0]} rt={0.2} rb={0.15} h={0.4} seg={6} mat={M(palette.wallTop)} />
           <Rock p={[0, 0.62, 0]} rad={0.3} sc={[1, 1.2, 1]} c="#3fb84a" />
           <Blob p={[0, 0.02, 0]} size={0.7} />
-        </group>
+        </Part>
       ))}
     </group>
   );
 }
 
-function AttractionSlot({ A, level, spot }) {
+function AttractionSlot({ A, level, spot, index }) {
   const { building, delay } = useBuildPhase(level, spot, 1.6, 1800);
   if (building) return <group position={[spot[0], -0.5, spot[1]]}><Construction w={2.6} d={2.6} h={2.4} /></group>;
   if (level === 0) return null;
@@ -514,7 +542,7 @@ function AttractionSlot({ A, level, spot }) {
     <group position={[spot[0], -0.5, spot[1]]}>
       <Bump trigger={level}>
         <PopIn key={level === 1 ? 'new' : 'up'} delay={delay} drop={3}>
-          <A level={level} />
+          <Part id={`attr${index}`} station={`attr:${index}`}><A level={level} /></Part>
         </PopIn>
       </Bump>
     </group>
@@ -524,7 +552,7 @@ function AttractionSlot({ A, level, spot }) {
 function Attractions({ Ext, roomCount }) {
   const levels = useHotel(s => s.hotels[s.activeHotel].attractions);
   const spots = attractionSpots(roomCount);
-  return Ext.attractions.map((A, i) => <AttractionSlot key={i} A={A} level={levels[i]} spot={spots[i]} />);
+  return Ext.attractions.map((A, i) => <AttractionSlot key={i} index={i} A={A} level={levels[i]} spot={spots[i]} />);
 }
 
 export default function Hotel() {
@@ -540,9 +568,9 @@ export default function Hotel() {
       <PopAt at={[10, 9.6]} delay={1.1} drop={1.5}><Reception /></PopAt>
       <PopAt at={[7, 5.3]} delay={1.25} drop={1.5}><Bar Ext={Ext} /></PopAt>
       <PopAt at={[6.5, 10]} delay={1.4}><Lounge Ext={Ext} /></PopAt>
-      <Ext.Outside wing={depth} />
-      <Grounds wing={depth} />
-      <Street />
+      <Part id="outside" kind="auto"><Ext.Outside wing={depth} /></Part>
+      <Part id="grounds" kind="auto"><Grounds wing={depth} /></Part>
+      <Part id="street" kind="auto"><Street /></Part>
       <Attractions Ext={Ext} roomCount={roomCount} />
     </group>
   );

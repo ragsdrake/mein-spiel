@@ -14,6 +14,13 @@ const GLOW_HALOS = true;
 const cache = new Map();
 
 /**
+ * Asset-export mode (app/export.js): the 3D scene is the modelling source for
+ * the pre-rendered Blender sprites. Glows, fake blob shadows and textures are
+ * left out there — Cycles renders real light, shadows and occlusion.
+ */
+export const RENDER_MODE = { export: false };
+
+/**
  * Shared material.
  *  - `emissive`/`intensity`: self-lit colour (windows, flames, magic)
  *  - `tx`, `rx`, `ry`:       clean-* pattern + repeat (other patterns are ignored)
@@ -37,7 +44,7 @@ export function M(color, opts = {}) {
     });
     // Flat "Codigames" look: only the crisp clean-* patterns are used, no noisy
     // detail textures and no bump — surfaces read as clean coloured shapes.
-    if (tx && tx.startsWith('clean')) m.map = tex(tx, rx, ry);
+    if (tx && tx.startsWith('clean') && !RENDER_MODE.export) m.map = tex(tx, rx, ry);
     cache.set(key, m);
   }
   return m;
@@ -71,7 +78,7 @@ export function GlowS(color, opacity = 0.6) {
 
 /** Glowing sprite of `size` world units. */
 export function Sprite({ p = [0, 0, 0], size = 1, color = '#ffb347', opacity = 0.6 }) {
-  if (!GLOW_HALOS) return null;
+  if (!GLOW_HALOS || RENDER_MODE.export) return null;
   return <sprite position={p} scale={[size, size, 1]} material={GlowS(color, opacity)} renderOrder={3} />;
 }
 
@@ -176,7 +183,7 @@ export function Torus({ p = [0, 0, 0], rad = 0.2, tube = 0.04, seg = 8, arc = Ma
 
 /** Flat halo sprite lying on the ground or facing up (additive). */
 export function Halo({ p = [0, 0, 0], size = 1, color = '#ffb347', opacity = 0.5, r = [-Math.PI / 2, 0, 0] }) {
-  if (!GLOW_HALOS) return null;
+  if (!GLOW_HALOS || RENDER_MODE.export) return null;
   return (
     <mesh position={p} rotation={r} material={Glow(color, opacity)} renderOrder={2}>
       <planeGeometry args={[size, size]} />
@@ -186,6 +193,7 @@ export function Halo({ p = [0, 0, 0], size = 1, color = '#ffb347', opacity = 0.5
 
 /** Soft contact shadow disc. */
 export function Blob({ p = [0, 0.02, 0], size = 0.9 }) {
+  if (RENDER_MODE.export) return null;
   return (
     <mesh position={p} rotation={[-Math.PI / 2, 0, 0]} material={SHADOW_BLOB} renderOrder={1}>
       <planeGeometry args={[size, size]} />

@@ -8,7 +8,7 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MeshBasicMaterial } from 'three';
 import { burst, intro } from '../../game/fx';
-import { Box, Cyl, M } from './primitives';
+import { Box, Cyl, M, RENDER_MODE } from './primitives';
 
 export const clamp01 = (x) => Math.max(0, Math.min(1, x));
 export const easeOutBack = (x) => 1 + 2.4 * Math.pow(x - 1, 3) + 1.4 * Math.pow(x - 1, 2);
@@ -21,6 +21,11 @@ const TINY = 0.0001;
  * mounting — or after the intro gate opens. `drop` lets it fall from above.
  */
 export function PopIn({ delay = 0, dur = 0.5, drop = 0, squash = false, rise = false, children, ...rest }) {
+  if (RENDER_MODE.export) return <group {...rest}>{children}</group>;
+  return <PopInAnimated {...{ delay, dur, drop, squash, rise, ...rest }}>{children}</PopInAnimated>;
+}
+
+function PopInAnimated({ delay, dur, drop, squash, rise, children, ...rest }) {
   const ref = useRef();
   const time = useRef(null);
   const done = useRef(false);
@@ -172,7 +177,7 @@ export function Construction({ w = 2.8, d = 2.8, h = 2 }) {
         <Box p={[0.22, 0, 0]} s={[0.44, 0.05, 0.05]} c="#8a5a33" cast={false} />
         <Box p={[0.44, 0, 0]} s={[0.1, 0.16, 0.1]} c="#5a5a66" cast={false} />
       </group>
-      {mats.map((m, i) => (
+      {!RENDER_MODE.export && mats.map((m, i) => (
         <mesh key={i} ref={el => { puffs.current[i] = el; }} position={[(i % 3 - 1) * hw * 0.6, 0.3, (Math.floor(i / 3) - 0.5) * hd]}
           material={m} renderOrder={5}>
           <icosahedronGeometry args={[0.5, 0]} />

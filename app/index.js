@@ -14,7 +14,7 @@ import {
 } from '../components/hud/Popups';
 import IntroSplash from '../components/hud/Intro';
 import TopBar from '../components/hud/TopBar';
-import HotelScene from '../components/scene/HotelScene';
+import GameView from '../components/GameView';
 import { panBy, zoomBy } from '../game/camera';
 import useHotel from '../game/store';
 
@@ -88,7 +88,7 @@ export default function GameScreen() {
   return (
     <View style={styles.root}>
       <View style={StyleSheet.absoluteFill} {...pan.panHandlers}>
-        <HotelScene />
+        <GameView />
       </View>
 
       <SafeAreaView style={styles.hud} edges={['top', 'bottom']} pointerEvents="box-none">

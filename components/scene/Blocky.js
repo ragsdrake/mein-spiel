@@ -40,10 +40,12 @@ export function Person({
   const armR = useRef();
   useFrame(({ clock }) => {
     const mv = motion?.current;
-    const a = mv?.moving ? Math.sin(clock.elapsedTime * 11 + (mv.phase ?? 0)) * 0.6 : 0;
+    // fixed poses for the sprite export: { swing } or { sit }
+    const pose = mv?.pose;
+    const a = pose ? (pose.swing ?? 0) : mv?.moving ? Math.sin(clock.elapsedTime * 11 + (mv.phase ?? 0)) * 0.6 : 0;
     if (legL.current) {
-      legL.current.rotation.x = a;
-      legR.current.rotation.x = -a;
+      legL.current.rotation.x = pose?.sit ? -1.45 : a;
+      legR.current.rotation.x = pose?.sit ? -1.45 : -a;
     }
     armL.current.rotation.x = -a * 0.8 + (mv?.carry ? -1.2 : 0);
     armR.current.rotation.x = a * 0.8 + (mv?.carry ? -1.2 : 0);

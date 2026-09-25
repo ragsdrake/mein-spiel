@@ -6,6 +6,7 @@
  */
 
 import { PopIn } from './anim';
+import { Part } from './parts';
 import { Candelabra, Candle, GOLD, Painting } from './Props';
 import { Ball, Box, Cyl, M, Rock } from './primitives';
 
@@ -254,23 +255,31 @@ export function RoomInterior({ layout, index, level, pal, back = -1.5, lowBack =
   const [rx, rz, rw, rd] = plan.rug;
   return (
     <group>
-      <PopIn position={[rx, 0, rz]} delay={delay - 0.1} dur={0.35}><Rug color={rug} s={[rw, rd]} /></PopIn>
+      <Part id={`room${index}-rug`} kind="flat" station={`room:${index}`}>
+        <PopIn position={[rx, 0, rz]} delay={delay - 0.1} dur={0.35}><Rug color={rug} s={[rw, rd]} /></PopIn>
+      </Part>
       {plan.items.map(([kind, x, z, r, min], i) => {
         if (level < min) return null;
         const C = PIECES[kind];
         return (
-          <PopIn key={i} position={[x, 0, z]} rotation={[0, r, 0]} delay={delay + i * 0.07} drop={0.7}>
-            <C pal={pal} level={level} color={accent} />
-          </PopIn>
+          <Part key={i} id={`room${index}-item${i}`} station={`room:${index}`}>
+            <PopIn position={[x, 0, z]} rotation={[0, r, 0]} delay={delay + i * 0.07} drop={0.7}>
+              <C pal={pal} level={level} color={accent} />
+            </PopIn>
+          </Part>
         );
       })}
       {level >= 2 && !lowBack && (
-        <PopIn position={[plan.painting[0], plan.painting[1], back + 0.07]} delay={delay + 0.6}><Painting p={[0, 0, 0]} hue={accent} /></PopIn>
+        <Part id={`room${index}-painting`} kind="decal" station={`room:${index}`}>
+          <PopIn position={[plan.painting[0], plan.painting[1], back + 0.07]} delay={delay + 0.6}><Painting p={[0, 0, 0]} hue={accent} /></PopIn>
+        </Part>
       )}
       {level >= 10 && (
+        <Part id={`room${index}-chandelier`} station={`room:${index}`}>
         <PopIn position={[0, 2.3, 0]} delay={delay + 0.7}>
           <Ball p={[0, 0, 0]} rad={0.22} w={8} hs={6} mat={M('#f4fbff', { emissive: pal.windowGlow, intensity: 0.8 })} />
         </PopIn>
+        </Part>
       )}
     </group>
   );

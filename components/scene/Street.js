@@ -6,7 +6,7 @@
 
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
-import { Blob, Box, Cyl, Halo, M, Sprite } from './primitives';
+import { Blob, Box, Cyl, Halo, M, RENDER_MODE, Sprite } from './primitives';
 import { useTheme } from './theme';
 
 const Z_WALK = 20.2;   // sidewalk from here …
@@ -96,7 +96,7 @@ export default function Street() {
           <Vehicle color={colors[c % colors.length]} />
         </group>
       ))}
-      <Traffic colors={colors} />
+      {!RENDER_MODE.export && <Traffic colors={colors} />}
     </group>
   );
 }
