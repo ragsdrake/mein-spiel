@@ -6,7 +6,7 @@
 
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
-import { Blob, Box, Cyl, M } from './primitives';
+import { Blob, Box, Cyl, Halo, M, Sprite } from './primitives';
 import { useTheme } from './theme';
 
 const Z_WALK = 20.2;   // sidewalk from here …
@@ -84,7 +84,9 @@ export default function Street() {
         <group key={x} position={[x, -0.45, Z_WALK + 0.3]}>
           <Cyl p={[0, 0.9, 0]} rt={0.05} h={1.8} seg={5} c="#3a3440" />
           <Box p={[0, 1.85, 0.15]} s={[0.1, 0.06, 0.4]} c="#3a3440" />
-          <Box p={[0, 1.78, 0.32]} s={[0.22, 0.12, 0.22]} mat={M('#fff6c0', { emissive: '#ffe08a', intensity: 0.6 })} />
+          <Box p={[0, 1.78, 0.32]} s={[0.22, 0.12, 0.22]} mat={M('#fff6c0', { emissive: '#ffc86a', intensity: 1.4 })} />
+          <Sprite p={[0, 1.7, 0.32]} size={2.2} color="#ffc86a" opacity={0.35} />
+          <Halo p={[0, 0.07, 0.6]} size={2.6} color="#ffc86a" opacity={0.22} />
           <Blob p={[0, 0.02, 0]} size={0.5} />
         </group>
       ))}

@@ -9,15 +9,15 @@ import { PopIn } from './anim';
 import { Candelabra, Candle, GOLD, Painting } from './Props';
 import { Ball, Box, Cyl, M, Rock } from './primitives';
 
-/** Wallpaper / accent colour pairs, one per room — every room looks different. */
+/** Dark jewel-tone wallpaper, a glowing accent and a rug colour per room. */
 export const ROOM_COLORS = [
-  { paper: '#f6cdd6', accent: '#e05a7a' },
-  { paper: '#cfe4f6', accent: '#3f94d6' },
-  { paper: '#f6e4ad', accent: '#e39a1e' },
-  { paper: '#d3eccd', accent: '#4caf50' },
-  { paper: '#ddd0f3', accent: '#8a5ad0' },
-  { paper: '#f8d4bd', accent: '#ea6a3a' },
-];
+  { paper: '#5a3a6e', accent: '#ff7a1a', rug: '#8a3a1e' },
+  { paper: '#2c5456', accent: '#5ae0a0', rug: '#1e6a52' },
+  { paper: '#62283a', accent: '#ff4a62', rug: '#8a1e34' },
+  { paper: '#46502a', accent: '#c8f05a', rug: '#5a6a1e' },
+  { paper: '#2c386a', accent: '#8aa8ff', rug: '#34428a' },
+  { paper: '#643a22', accent: '#ffb03a', rug: '#8a541e' },
+]
 
 // ─── pieces ──────────────────────────────────────────────────────────────────
 function Nightstand({ pal }) {
@@ -250,11 +250,11 @@ const PLANS = [
 /** Furniture of one room for its layout, colours and level. */
 export function RoomInterior({ layout, index, level, pal, back = -1.5, lowBack = false, delay = 0 }) {
   const plan = PLANS[layout];
-  const { accent } = ROOM_COLORS[index % ROOM_COLORS.length];
+  const { accent, rug } = ROOM_COLORS[index % ROOM_COLORS.length];
   const [rx, rz, rw, rd] = plan.rug;
   return (
     <group>
-      <PopIn position={[rx, 0, rz]} delay={delay - 0.1} dur={0.35}><Rug color={accent} s={[rw, rd]} /></PopIn>
+      <PopIn position={[rx, 0, rz]} delay={delay - 0.1} dur={0.35}><Rug color={rug} s={[rw, rd]} /></PopIn>
       {plan.items.map(([kind, x, z, r, min], i) => {
         if (level < min) return null;
         const C = PIECES[kind];

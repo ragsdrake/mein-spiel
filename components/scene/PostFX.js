@@ -1,11 +1,12 @@
 /**
- * Post-processing for "Ultra" quality: SMAA anti-aliasing only — the flat
- * tycoon look uses no bloom and no tone mapping.
+ * Post-processing for "Ultra" quality: SMAA anti-aliasing plus a soft bloom
+ * on the brightest emissive bits (windows, pumpkins, lanterns) for the
+ * night scenes. No tone mapping.
  * Takes over rendering from react-three-fiber while mounted.
  */
 
 import { useFrame, useThree } from '@react-three/fiber';
-import { EffectComposer, EffectPass, RenderPass, SMAAEffect } from 'postprocessing';
+import { BloomEffect, EffectComposer, EffectPass, RenderPass, SMAAEffect } from 'postprocessing';
 import { useEffect, useMemo } from 'react';
 import { HalfFloatType, NoToneMapping } from 'three';
 
@@ -17,6 +18,7 @@ export default function PostFX() {
     c.addPass(new RenderPass(scene, camera));
     c.addPass(new EffectPass(
       camera,
+      new BloomEffect({ intensity: 0.9, luminanceThreshold: 0.72, luminanceSmoothing: 0.2, mipmapBlur: true, radius: 0.6 }),
       new SMAAEffect(),
     ));
     return c;

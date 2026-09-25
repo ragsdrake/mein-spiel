@@ -8,7 +8,7 @@ import { Floaty, GardenPath, Ground, PoleTorch } from './common';
 
 const ICE = () => RimM('#bfe8ff', '#6fdcff', { strength: 1.1, intensity: 0.2, rough: 0.15 });
 const ICE_CLEAR = () => RimM('#d8f4ff', '#8fe8ff', { strength: 1.4, intensity: 0.25, opacity: 0.75, rough: 0.1 });
-const SNOW = () => M('#f4faff');
+const SNOW = () => M('#b8cce4');
 
 function Spire({ p, h = 6, rad = 0.8, tilt = 0 }) {
   return (

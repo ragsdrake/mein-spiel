@@ -1,15 +1,15 @@
 /**
  * Low-poly building blocks for the flat "hyper-casual tycoon" look:
  * cheap Lambert solid colours with flat shading (no PBR), cached per look so
- * the whole hotel shares a handful of GPU programs. Light halos are disabled
- * so every surface shows the clean three-tone sun shading.
+ * the whole hotel shares a handful of GPU programs. Flames, windows and
+ * lanterns get soft additive halos for the night atmosphere.
  */
 
 import { AdditiveBlending, MeshBasicMaterial, MeshLambertMaterial, SpriteMaterial } from 'three';
 import { tex } from './textures';
 
-/** Soft glow sprites / floor halos are switched off in the flat look. */
-const GLOW_HALOS = false;
+/** Soft glow sprites / floor halos around lights — they sell the night scenes. */
+const GLOW_HALOS = true;
 
 const cache = new Map();
 

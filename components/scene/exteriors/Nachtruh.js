@@ -16,11 +16,11 @@ function Outside() {
       <Ground />
       <GardenPath />
       {/* crooked hotel tower + hills behind the building */}
-      <Tower p={[-3.2, -0.5, -3]} h={9} rad={1.8} roof="#8a4ad0" wall="#b8b0e0" glow="#ffe07a" />
-      <Tower p={[16.5, -0.5, -2.5]} h={6} rad={1.2} roof="#8a4ad0" wall="#b8b0e0" glow="#ffe07a" />
-      <Hill p={[-8, -1.5, 6]} s={[5, 3, 9]} color="#58ae4c" />
-      <Hill p={[6, -1.8, -8]} s={[12, 3.5, 4]} color="#58ae4c" />
-      <Hill p={[22, -1.5, 8]} s={[5, 2.5, 10]} color="#58ae4c" />
+      <Tower p={[-3.2, -0.5, -3]} h={9} rad={1.8} roof="#4a2a6a" wall="#5c5274" glow="#ffe07a" />
+      <Tower p={[16.5, -0.5, -2.5]} h={6} rad={1.2} roof="#4a2a6a" wall="#5c5274" glow="#ffe07a" />
+      <Hill p={[-8, -1.5, 6]} s={[5, 3, 9]} color="#2a4032" />
+      <Hill p={[6, -1.8, -8]} s={[12, 3.5, 4]} color="#2a4032" />
+      <Hill p={[22, -1.5, 8]} s={[5, 2.5, 10]} color="#2a4032" />
 
       <Gravestone p={[2, -0.5, 14]} r={0.2} />
       <Gravestone p={[4.2, -0.5, 15.6]} r={-0.1} kind={2} />
@@ -37,7 +37,7 @@ function Outside() {
       <DeadTree p={[0, -0.5, 20]} s={1.1} />
       <DeadTree p={[18, -0.5, 16.5]} />
       <Bush p={[9.2, -0.5, 13.6]} s={0.9} />
-      <Bush p={[15.3, -0.5, 15]} s={1.1} color="#35603f" />
+      <Bush p={[15.3, -0.5, 15]} s={1.1} color="#22382a" />
       <Bush p={[0.4, -0.5, 13.4]} s={1.2} />
       <Fence from={[-1, 19.6]} to={[11.6, 19.6]} count={13} />
       <PoleTorch p={[11.4, -0.5, 14]} />

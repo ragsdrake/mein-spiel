@@ -143,7 +143,7 @@ export function Tower({ p, h = 8, rad = 1.6, roof = '#5a2a3a', wall = '#6d6878',
   );
 }
 
-export function Hill({ p, s = [6, 2, 6], color = '#58ae4c' }) {
+export function Hill({ p, s = [6, 2, 6], color = '#2a4032' }) {
   return <Rock p={p} rad={1} sc={s} mat={M(color, { tx: 'stone', bump: 1 })} detail={1} />;
 }
 

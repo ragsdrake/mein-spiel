@@ -78,14 +78,15 @@ function Lights({ shadows }) {
   const { palette } = useTheme();
   // Classic three-tone tycoon shading: one strong sun from above/right so every
   // block shows a bright top, a mid-tone right side and a darker left side,
-  // plus a flat fill. No point lights, no glow.
+  // plus a flat fill. The hotels are night scenes: cool moonlight as the key,
+  // lower fill, and the warm glow comes from emissive windows and lanterns.
   return (
     <group>
-      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 0.75]} />
-      <ambientLight intensity={0.55} />
+      <hemisphereLight args={[palette.hemiSky, palette.hemiGround, palette.light?.hemi ?? 0.75]} />
+      <ambientLight intensity={palette.light?.ambient ?? 0.55} />
       <directionalLight
         position={[12, 24, 3.5]}
-        intensity={2.3}
+        intensity={palette.light?.key ?? 2.3}
         color={palette.key}
         castShadow={shadows}
         shadow-mapSize={[2048, 2048]}

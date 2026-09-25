@@ -12,13 +12,15 @@ import useHotel from '../../../game/store';
 import { PopIn } from '../anim';
 import { Vehicle } from '../Street';
 import { GOLD } from '../Props';
-import { Ball, Blob, Box, Cone, Cyl, M, Rock, rand } from '../primitives';
+import { Ball, Blob, Box, Cone, Cyl, M, Rock, Sprite, rand } from '../primitives';
 import { useTheme } from '../theme';
 
 const Y = -0.5;               // garden ground level
-const FLOWERS = ['#ff5a7a', '#ffd23a', '#ffffff', '#b77cff', '#ff8a3a'];
 
 function Hedge({ from, to, h = 0.55, t = 0.5, flowers = true, seed = 0 }) {
+  const { palette } = useTheme();
+  const green = palette.hedge ?? '#27452f';
+  const FLOWERS = palette.flowers ?? ['#ff7a1a', '#a86af0'];
   const [x0, z0] = from;
   const [x1, z1] = to;
   const len = Math.hypot(x1 - x0, z1 - z0);
@@ -27,17 +29,50 @@ function Hedge({ from, to, h = 0.55, t = 0.5, flowers = true, seed = 0 }) {
   const n = Math.floor(len / 0.45);
   return (
     <group>
-      <Box p={[cx, Y + h / 2, cz]} s={along ? [len, h, t] : [t, h, len]} c="#3fa04a" />
-      <Box p={[cx, Y + h + 0.03, cz]} s={along ? [len - 0.1, 0.06, t - 0.1] : [t - 0.1, 0.06, len - 0.1]} c="#56bd5a" cast={false} />
+      <Box p={[cx, Y + h / 2, cz]} s={along ? [len, h, t] : [t, h, len]} c={green} />
+      <Box p={[cx, Y + h + 0.03, cz]} s={along ? [len - 0.1, 0.06, t - 0.1] : [t - 0.1, 0.06, len - 0.1]} c={green} cast={false} />
       {flowers && Array.from({ length: n }, (_, i) => {
         const k = (i + 0.5) / n;
         const x = x0 + (x1 - x0) * k + (along ? 0 : (rand(i + seed) - 0.5) * 0.25);
         const z = z0 + (z1 - z0) * k + (along ? (rand(i + seed) - 0.5) * 0.25 : 0);
         return (
           <Ball key={i} p={[x, Y + h + 0.08, z]} rad={0.08} w={5} hs={3}
-            mat={M(FLOWERS[Math.floor(rand(i * 3 + seed) * FLOWERS.length)])} cast={false} />
+            mat={glowFlower(FLOWERS[Math.floor(rand(i * 3 + seed) * FLOWERS.length)])} cast={false} />
         );
       })}
+    </group>
+  );
+}
+
+/** Night flowers glow a little so the beds read in the dark. */
+const glowFlower = (c) => M(c, { emissive: c, intensity: 0.35 });
+
+/** Glowing jack-o'-lantern (carved face lit from inside). */
+function JackOLantern({ p, r = 0, s = 1 }) {
+  const face = M('#ffd24a', { emissive: '#ff9a1a', intensity: 1.6 });
+  return (
+    <group position={p} rotation={[0, r, 0]} scale={s}>
+      <Rock p={[0, 0.24, 0]} rad={0.3} sc={[1.15, 0.85, 1]} c="#e8661a" />
+      <Cyl p={[0, 0.52, 0]} rt={0.04} h={0.12} seg={5} c="#3a5a22" />
+      {/* eyes + grin facing +z */}
+      <Cone p={[-0.1, 0.3, 0.27]} rad={0.06} h={0.02} seg={3} r={[Math.PI / 2, 0, 0]} mat={face} cast={false} />
+      <Cone p={[0.1, 0.3, 0.27]} rad={0.06} h={0.02} seg={3} r={[Math.PI / 2, 0, 0]} mat={face} cast={false} />
+      <Box p={[0, 0.17, 0.27]} s={[0.22, 0.05, 0.02]} mat={face} cast={false} />
+      <Sprite p={[0, 0.3, 0.1]} size={1.2} color="#ff9a1a" opacity={0.45} />
+      <Blob p={[0, 0.02, 0]} size={0.8} />
+    </group>
+  );
+}
+
+/** Themed light along the path: pumpkins for the spooky hotels, lamps elsewhere. */
+function PathLight({ p, r }) {
+  const { id, palette } = useTheme();
+  if (id === 'nachtruh' || id === 'dracula') return <JackOLantern p={p} r={r} s={0.8} />;
+  return (
+    <group position={p}>
+      <Cyl p={[0, 0.2, 0]} rt={0.1} rb={0.14} h={0.4} seg={6} c="#3a3440" />
+      <Box p={[0, 0.5, 0]} s={[0.22, 0.24, 0.22]} mat={M(palette.window, { emissive: palette.windowGlow, intensity: 1.4 })} />
+      <Sprite p={[0, 0.5, 0]} size={1.1} color={palette.windowGlow} opacity={0.45} />
     </group>
   );
 }
@@ -61,7 +96,8 @@ function Lantern({ p }) {
     <group position={p}>
       <Cyl p={[0, 0.05, 0]} rt={0.14} h={0.1} seg={6} c="#3a3440" />
       <Cyl p={[0, 0.7, 0]} rt={0.04} h={1.3} seg={5} c="#3a3440" />
-      <Box p={[0, 1.45, 0]} s={[0.26, 0.3, 0.26]} mat={M('#fff3c0', { emissive: '#ffd88a', intensity: 0.8 })} />
+      <Box p={[0, 1.45, 0]} s={[0.26, 0.3, 0.26]} mat={M('#fff3c0', { emissive: '#ffb04a', intensity: 1.4 })} />
+      <Sprite p={[0, 1.45, 0]} size={1.6} color="#ffb04a" opacity={0.4} />
       <Cone p={[0, 1.68, 0]} rad={0.22} h={0.18} seg={4} r={[0, Math.PI / 4, 0]} c="#3a3440" />
       <Blob p={[0, 0.02, 0]} size={0.5} />
     </group>
@@ -72,8 +108,8 @@ function Topiary({ p }) {
   return (
     <group position={p}>
       <Box p={[0, 0.22, 0]} s={[0.45, 0.44, 0.45]} c="#d8d0c8" />
-      <Rock p={[0, 0.72, 0]} rad={0.32} detail={0} c="#3fa04a" />
-      <Rock p={[0, 1.12, 0]} rad={0.2} detail={0} c="#56bd5a" />
+      <Rock p={[0, 0.72, 0]} rad={0.32} detail={0} c="#2e4a32" />
+      <Rock p={[0, 1.12, 0]} rad={0.2} detail={0} c="#36563a" />
       <Blob p={[0, 0.02, 0]} size={0.8} />
     </group>
   );
@@ -166,10 +202,10 @@ export default function Grounds({ wing = 0 }) {
         ))}
         {Array.from({ length: 7 }, (_, i) => (
           <Box key={i} p={[-1.08 + i * 0.36, 2.35, 0.2]} s={[0.36, 0.08, 1.7]} r={[-0.18, 0, 0]}
-            mat={M(i % 2 ? '#ffffff' : palette.rugHi)} />
+            mat={M(i % 2 ? '#2a2233' : palette.rugHi)} />
         ))}
         {Array.from({ length: 7 }, (_, i) => (
-          <Box key={`v${i}`} p={[-1.08 + i * 0.36, 2.12, 1.05]} s={[0.36, 0.22, 0.04]} mat={M(i % 2 ? '#ffffff' : palette.rugHi)} cast={false} />
+          <Box key={`v${i}`} p={[-1.08 + i * 0.36, 2.12, 1.05]} s={[0.36, 0.22, 0.04]} mat={M(i % 2 ? '#2a2233' : palette.rugHi)} cast={false} />
         ))}
       </PopIn>
 
@@ -183,6 +219,15 @@ export default function Grounds({ wing = 0 }) {
       <Bench p={[10.7, Y, 18.6]} r={Math.PI / 2} />
       <Bench p={[15.3, Y, 18.6]} r={-Math.PI / 2} />
       <Lantern p={[10.6, Y, 19.7]} />
+      {[15.1, 16.7, 18.3].map((z, i) => (
+        <group key={z}>
+          <PathLight p={[12.05, Y, z]} r={0.5 + i * 0.3} />
+          <PathLight p={[13.95, Y, z]} r={-0.4 - i * 0.2} />
+        </group>
+      ))}
+      {/* pumpkin pile by the sign */}
+      <JackOLantern p={[16.3, Y, 17.9]} r={-0.6} />
+      <JackOLantern p={[17.0, Y, 18.3]} r={-0.2} s={0.7} />
       <Topiary p={[15.3, Y, 17.4]} />
 
       <HotelSign p={[16.9, Y, 19.2]} />

@@ -6,7 +6,7 @@ import { Flame, GOLD } from '../Props';
 import { Ball, Blob, Box, Cone, Cyl, M, Rock, Sprite } from '../primitives';
 import { Floaty, GardenPath, Ground, PoleTorch } from './common';
 
-const SAND = '#d9b77a';
+const SAND = '#a88450';
 const TEAL = () => M('#1f7d82', { metal: 0.3, rough: 0.35 });
 
 function Pyramid({ p, s = 10 }) {
