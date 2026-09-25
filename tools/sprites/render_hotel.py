@@ -38,7 +38,7 @@ FRONT_Z = 11.5          # auto parts reaching beyond this (three z) become sprit
 FLAT_H = 0.16           # auto parts lower than this are ground (backdrop)
 # region of the world baked into the backdrop (three coords)
 REGION = {'x0': -14, 'x1': 36, 'z0': -12, 'z1': 32}
-BACKDROP_SCALE = 2 / 3  # backdrop pixels per sprite pixel
+BACKDROP_SCALE = 1.0    # backdrop pixels per sprite pixel
 CHUNK = 1024
 
 RIGHT = Vector((math.sqrt(0.5), math.sqrt(0.5), 0.0))
@@ -305,6 +305,11 @@ def main():
                 # floor shadow of this dynamic part, drawn under everything
                 vis(ms, camera=False, render=True)
                 vis(floor_meshes, camera=True, catcher=True)
+                # only this part may darken the catcher, not the whole scene
+                for o in all_meshes:
+                    o.visible_shadow = False
+                for o in ms:
+                    o.visible_shadow = True
                 slo = Vector((lo.x - 0.8, lo.y - 0.8, 0))
                 shi = Vector((hi.x + 0.8, hi.y + 0.8, 0.05))
                 srect = screen_rect(slo, shi, ppu)
@@ -316,6 +321,8 @@ def main():
                 sc.render.resolution_percentage = 100
                 sc.cycles.samples = opts['samples']
                 vis(floor_meshes, camera=False, catcher=False)
+                for o in all_meshes:
+                    o.visible_shadow = True
                 entry['shadow'] = {'x': srect[0], 'y': srect[1], 'w': srect[2] - srect[0], 'h': srect[3] - srect[1]}
             manifest['sprites'].append(entry)
             print(f'[sprite {n + 1}/{len(jobs)}] {name} {entry["w"]}x{entry["h"]} {time.time() - t1:.1f}s')

@@ -10,7 +10,7 @@
 import { Canvas, Picture, Skia } from '@shopify/react-native-skia';
 import { Asset } from 'expo-asset';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 import {
   BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, attractionSpots, barUpgradeCost,
@@ -224,6 +224,13 @@ export default function IsoScene() {
         if (!stepBurst(c, v, bursts[i], now, dt)) bursts.splice(i, 1);
       }
       targets.current = tg;
+      if (__DEV__ && Platform.OS === 'web') {
+        // test hooks for browser automation (dev only)
+        window.__cam = cam;
+        window.__store = useHotel;
+        window.__isoTargets = () => targets.current.map(t => ({ kind: t.kind, at: t.at }));
+        window.__project = (x, y, z) => toScreen(v, x, z, y);
+      }
       picture.value = rec.finishRecordingAsPicture();
     };
     raf = requestAnimationFrame(frame);
@@ -231,7 +238,10 @@ export default function IsoScene() {
   }, [pack, hotelId, picture]);
 
   const onTap = (e) => {
-    const { locationX: x, locationY: y } = e.nativeEvent;
+    // react-native-web has no locationX on press events; the view fills the screen
+    const ne = e.nativeEvent;
+    const x = ne.locationX ?? ne.offsetX ?? ne.pageX;
+    const y = ne.locationY ?? ne.offsetY ?? ne.pageY;
     const v = viewRef.current;
     if (!v) return;
     const dist = (t) => Math.hypot(t.at[0] - x, t.at[1] - y);
