@@ -16,7 +16,7 @@ import {
   BAR_MAX_LEVEL, P, RECEPTION_MAX_LEVEL, ROOMS, ROOM_MAX_LEVEL, attractionSpots, barUpgradeCost,
   receptionUpgradeCost, roomUpgradeCost,
 } from '../../game/config';
-import { cam } from '../../game/camera';
+import { CAM_BOUNDS, cam } from '../../game/camera';
 import { fmt } from '../../game/format';
 import { burst, intro, useFx } from '../../game/fx';
 import { getHotel } from '../../game/hotels';
@@ -84,9 +84,16 @@ export default function IsoScene() {
   // frame the building on entering a hotel (wings are wider)
   useEffect(() => {
     const n = getHotel(hotelId).rooms.length;
-    cam.x = n > 6 ? 11.6 : 8.6;
-    cam.z = n > 8 ? 8 : n > 6 ? 7.6 : 8.4;
-    cam.zoom = n > 6 ? 0.84 : 1;
+    // start close on the building; zoom-out and panning stop at its edges,
+    // so the surroundings stay a frame instead of taking over the screen
+    const wide = n > 6;
+    cam.x = wide ? 9.4 : 6.9;
+    cam.z = wide ? 6.4 : 6.6;
+    cam.zoom = wide ? 1.25 : 1.35;
+    Object.assign(CAM_BOUNDS, {
+      minX: 2, maxX: wide ? 18 : 13, minZ: 2, maxZ: 13.5,
+      minZoom: wide ? 0.85 : 0.95, maxZoom: 2.6,
+    });
   }, [hotelId]);
 
   useEffect(() => {
