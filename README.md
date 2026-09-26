@@ -12,19 +12,17 @@
   <img src="docs/baustelle.png" width="200" alt="Baustelle beim Freischalten" />
 </p>
 
-Ein 3D-Idle-Game über Hotels für Monster. Du startest mit dem **Spukhotel Nachtruh** für Gespenster
+Ein Idle-Game über Hotels für Monster. Du startest mit dem **Spukhotel Nachtruh** für Gespenster
 und baust ein Imperium auf: **Burg Dracula** (Vampire, Werwölfe, Nosferatu), das **Pharaonengrab**
 (Mumien, Anubis, Pharao) und den **Yeti-Eispalast** (Yetis, Frostelfen, Eiskönigin).
 Gäste checken ein, schlafen, trinken an der Bar, zahlen und geben Trinkgeld – Personal
 automatisiert die Arbeit, und nicht besuchte Hotels verdienen nebenbei weiter.
 
-Look & Bedienung orientieren sich an den Codigames-Tycoons (Idle Supermarket, Theme Park,
-Prison Empire): Lambert-Flat-Shading mit klarer Drei-Ton-Sonne, helle dicke Schnittwände,
-eine kräftige Bodenfarbe pro Zone (Zimmer, Bar, Lounge, Rezeption), voll eingerichtete Räume,
-Straße mit Verkehr und Passanten, blockige Figuren mit Lauf-Animation,
-Geld + Einkommen/Sekunde oben links, Video-×2-Button, weiße Upgrade-Karten mit ×1/×10/MAX,
-Meilensteinen und Mitarbeiter-Zeile, grüne Upgrade-Pfeile direkt in der Welt.
-Alle Grafiken sind eigene 3D-Modelle, direkt im Code gebaut – keine Bilddateien, keine gekauften Assets.
+**Grafik:** isometrische Sprites, vorgerendert in Blender (Cycles) mit echtem Licht, weichen
+Schatten, Umgebungsverdeckung und leuchtenden Fenstern, Kürbissen und Laternen, gezeichnet mit
+Skia (`components/iso`). Die Modelle entstehen im Code (`components/scene`, three.js) und werden
+über eine eigene Pipeline gerendert – siehe [tools/sprites/README.md](tools/sprites/README.md).
+Keine gekauften Assets.
 
 ## Starten
 

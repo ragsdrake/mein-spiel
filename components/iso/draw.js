@@ -156,7 +156,8 @@ export function drawFrame(c, state) {
 
   // backdrop
   for (const b of pack.backdrop) {
-    drawImg(c, b.img, Skia.XYWHRect(0, 0, b.img.width(), b.img.height()), X(b.x), Y(b.y), b.w * k, b.h * k);
+    // +1 pt overlap hides the filtering seam between neighbouring chunks
+    drawImg(c, b.img, Skia.XYWHRect(0, 0, b.img.width(), b.img.height()), X(b.x), Y(b.y), b.w * k + 1, b.h * k + 1);
   }
 
   const levelOf = (p) => stationLevel(hs, p.station);
